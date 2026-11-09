@@ -10,25 +10,52 @@
   var qFilter = 'oranye', qSearch = '';
   function viewAntrean() {
     var K = A.kapasitas(), q = A.antrean();
-    var chips = [['oranye', 'Oranye'], ['merah', 'Merah'], ['kuning', 'Kuning'], ['hijau', 'Hijau'], ['semua', 'Semua']].map(function (c) { return '<button class="chip ' + (qFilter === c[0] ? 'on' : '') + '" data-f="' + c[0] + '">' + c[1] + '</button>'; }).join('');
-    var body = '<div class="search">' + icon('search') + '<input id="q" placeholder="Cari nama, kota, NMID, atau ID merchant" value="' + esc(qSearch) + '"></div><div class="chips">' + chips + '</div>';
+    var qCounts = {
+      oranye: q.length,
+      merah: T.merchants.filter(function (m) { return A.effLevel(m) === 'merah'; }).length,
+      kuning: T.merchants.filter(function (m) { return A.effLevel(m) === 'kuning'; }).length,
+      hijau: T.merchants.filter(function (m) { return A.effLevel(m) === 'hijau'; }).length,
+      semua: T.merchants.length
+    };
+    var chips = [['oranye', 'Oranye'], ['merah', 'Merah'], ['kuning', 'Kuning'], ['hijau', 'Hijau'], ['semua', 'Semua']].map(function (c) {
+      var dot = c[0] !== 'semua' ? '<span class="chip-dot ' + c[0] + '"></span>' : '';
+      return '<button class="chip ' + (qFilter === c[0] ? 'on' : '') + '" data-f="' + c[0] + '">' + dot + c[1] + ' <span class="chip-count">' + qCounts[c[0]] + '</span></button>';
+    }).join('');
+
+    var body = '<div class="search">' + icon('search') + '<input id="q" placeholder="Cari nama toko, kota, NMID, atau ID merchant" value="' + esc(qSearch) + '"></div><div class="chips">' + chips + '</div>';
     function match(m) { return !qSearch || (m.nama + ' ' + m.kota + ' ' + m.kategori + ' ' + m.nmid + ' ' + m.id).toLowerCase().indexOf(qSearch) >= 0; }
     if (qFilter === 'oranye') {
       var rows = q.filter(function (x) { return match(x.m); });
       var hari = K > 0 ? Math.ceil(q.length / K) : null, today = q.filter(function (x) { return x.today; }).length;
       var handled = T.merchants.filter(function (m) { return m.level === 'oranye' && A.caseOf(m.id) && match(m); }).sort(function (a, b) { return b.score - a.score; });
-      body += '<div class="card"><div class="flex between"><h3>Antrean berkapasitas</h3><button class="chip" id="cap">Atur kapasitas</button></div>' +
-        '<div class="grid3 mt8"><div class="mini-k"><b class="num">' + q.length + '</b><span>Belum diperiksa</span></div><div class="mini-k"><b class="num">' + K + '</b><span>Kapasitas per hari kerja</span></div><div class="mini-k"><b class="num">' + (hari === null ? '-' : hari) + '</b><span>Hari kerja untuk menuntaskan</span></div></div>' +
-        '<p class="hint mt8">Kapasitas adalah parameter yang diatur tim (' + S.settings.analis.map(function (a) { return esc(a.nama.split(' ')[0]) + ' ' + a.kap; }).join(', ') + ' kasus baru per hari). Perkiraan mulai ditinjau dihitung dari peringkat dibagi kapasitas harian dan berubah bila kapasitas atau jumlah kasus baru berubah. Merchant yang menunggu tidak dibatasi secara otomatis.</p></div>' +
-        '<div class="card"><h3>Peringkat prioritas</h3><p class="hint">Urutan berdasarkan skor prioritas (peringkat relatif, bukan peluang). Level Oranye berarti minimal dua dari tiga kelompok sinyal aktif.</p>' +
-        '<div class="tblwrap"><table class="mini qtable"><thead><tr><th>#</th><th>Merchant</th><th class="r">Skor</th><th>J P K</th><th>Petugas</th><th>Status antrean</th></tr></thead><tbody>' +
-        (rows.map(function (x) { var m = x.m; return '<tr data-href="#/merchant/' + m.id + '"><td class="num">' + x.rank + '</td><td><b>' + esc(m.nama) + '</b><br><span class="small muted">' + m.id + ' &middot; ' + esc(m.kategori) + '</span></td><td class="r num">' + m.score + '</td><td>' + A.groupsBar(m) + '</td><td>' + esc(x.petugas ? x.petugas.split(' ')[0] : '-') + '</td><td><span class="pill ' + (x.today ? 'st-menunggu' : 'st-investigasi') + '">' + x.status + '</span><br><span class="small muted">' + (x.hari ? 'mulai hari kerja ke-' + x.hari : 'kapasitas belum diatur') + '</span></td></tr>'; }).join('') || '<tr><td colspan="6" class="empty">Tidak ada merchant yang menunggu.</td></tr>') + '</tbody></table></div>' +
-        '<p class="small muted mt8">Dijadwalkan hari ini: ' + today + ' merchant. Menunggu kapasitas: ' + Math.max(0, q.length - today) + ' merchant.</p></div>' +
-        (handled.length ? '<div class="sec-title"><h2>Sudah ditangani</h2><span class="small muted">' + handled.length + ' merchant</span></div><div class="list">' + handled.map(function (m) { return A.itemRow(m); }).join('') + '</div>' : '');
+      body += '<div class="card"><div class="flex between"><div><span class="card-tag">ALOKASI KUOTA</span><h3>Antrean Sadar Kapasitas</h3></div><button class="chip" id="cap">' + icon('sliders') + 'Atur kapasitas</button></div>' +
+        '<div class="grid3 mt8"><div class="mini-k"><b class="num">' + q.length + '</b><span>Belum diperiksa</span></div><div class="mini-k"><b class="num">' + K + '</b><span>Kapasitas / hari kerja</span></div><div class="mini-k"><b class="num">' + (hari === null ? '-' : hari + ' hr') + '</b><span>Estimasi tuntas</span></div></div>' +
+        '<p class="hint mt8">Kapasitas diatur tim analis (' + S.settings.analis.map(function (a) { return esc(a.nama.split(' ')[0]) + ' ' + a.kap; }).join(', ') + ' kasus baru/hari). Urutan peninjauan disesuaikan kapasitas agar analis tidak tergesa-gesa. Merchant yang menunggu tidak dibatasi secara sepihak.</p></div>' +
+        '<div class="card"><div class="flex between"><div><span class="card-tag">PRIORITAS PENINJAUAN</span><h3>Daftar Merchant Oranye</h3></div><span class="badge b-resmi">' + rows.length + ' Merchant</span></div><p class="hint">Diurutkan berdasarkan skor prioritas tertinggi. Level Oranye memenuhi minimal 2 dari 3 kelompok sinyal pengawasan.</p>' +
+        '<div class="mt8">' +
+        '<div class="qtbl-head"><span class="h-rank">#</span><span class="h-merchant">Merchant</span><span class="h-skor">Skor</span><span class="h-sinyal">Sinyal</span><span class="h-petugas">PIC</span><span class="h-status">Status</span></div>' +
+        '<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden"><table class="qtable"><tbody>' +
+        (rows.map(function (x) {
+          var m = x.m, rankClass = x.rank <= 3 ? 'rank-pill top' : 'rank-pill';
+          var petugas = x.petugas ? x.petugas.split(' ')[0] : '\u2014';
+          var hariLabel = x.hari ? 'Hari ke-' + x.hari : 'Belum diatur';
+          var pillCls = x.today ? 'st-menunggu' : 'st-investigasi';
+          return '<tr data-href="#/merchant/' + m.id + '">' +
+            '<td><span class="' + rankClass + '">' + x.rank + '</span></td>' +
+            '<td><div class="mthumb"><div class="thumb">' + U.storefront(m, 36) + '</div><div><b>' + esc(m.nama) + '</b><small>' + esc(m.kategori) + '</small></div></div></td>' +
+            '<td><div class="qskor"><b>' + m.score + '</b><span>skor</span></div></td>' +
+            '<td>' + A.groupsBar(m) + '</td>' +
+            '<td>' + esc(petugas) + '</td>' +
+            '<td><div class="qstat"><span class="pill ' + pillCls + '">' + x.status + '</span><span class="qlabel">' + hariLabel + '</span></div></td>' +
+            '</tr>';
+        }).join('') || '<tr><td class="empty" colspan="6">Tidak ada merchant dalam antrean.</td></tr>') +
+        '</tbody></table></div></div>' +
+        '<p class="small muted mt8">Hari ini dijadwalkan: <b>' + today + ' merchant</b>. Menunggu kapasitas: <b>' + Math.max(0, q.length - today) + ' merchant</b>.</p></div>' +
+        (handled.length ? '<div class="sec-title"><h2>Kasus Sudah Dibuka</h2><span class="small muted">' + handled.length + ' merchant</span></div><div class="list">' + handled.map(function (m) { return A.itemRow(m); }).join('') + '</div>' : '');
     } else {
       var list = T.merchants.filter(function (m) { return (qFilter === 'semua' || A.effLevel(m) === qFilter) && match(m); }).sort(function (a, b) { return b.score - a.score; });
-      if (qFilter === 'kuning') body += '<div class="note" style="margin-bottom:12px">Kuning tidak masuk antrean. Merchant dipantau otomatis tanpa pemberitahuan atau pembatasan apa pun.</div>';
-      if (qFilter === 'merah') body += '<div class="note" style="margin-bottom:12px">Merah hanya ada setelah pemeriksaan manusia, bukti memadai, dan persetujuan dua pejabat. Tidak ada merchant yang menjadi Merah otomatis.</div>';
+      if (qFilter === 'kuning') body += '<div class="note" style="margin-bottom:12px"><b>Level Kuning:</b> Tepat satu kelompok sinyal aktif. Merchant dipantau otomatis tanpa pemberitahuan atau pembatasan sepihak.</div>';
+      if (qFilter === 'merah') body += '<div class="note" style="margin-bottom:12px"><b>Level Merah:</b> Hanya ada setelah verifikasi mendalam oleh analis, bukti memadai, dan persetujuan 2 pejabat kepatuhan berbeda.</div>';
       body += '<div class="list">' + (list.map(function (m) { return A.itemRow(m); }).join('') || '<div class="empty">Tidak ada merchant pada level ini.</div>') + '</div>';
     }
     shell('Antrean', 'Peringkat prioritas, bukan peluang', body);
@@ -37,8 +64,8 @@
     app.querySelectorAll('tr[data-href]').forEach(function (r) { r.onclick = function () { location.hash = r.dataset.href; }; });
     var qi = app.querySelector('#q'); qi.oninput = function () { qSearch = qi.value.toLowerCase(); var pos = qi.selectionStart; A.skipAnim = true; viewAntrean(); var n = app.querySelector('#q'); n.focus(); n.setSelectionRange(pos, pos); };
     var cb = app.querySelector('#cap'); if (cb) cb.onclick = function () {
-      var s = sheet('<h3>Kapasitas analis</h3><p class="small muted">Jumlah kasus baru yang dapat mulai ditinjau tiap analis per hari kerja. Ini asumsi operasional tim, bukan statistik nasional.</p>' +
-        S.settings.analis.map(function (a, i) { return '<div class="field"><label>' + esc(a.nama) + '</label><input type="number" min="0" max="20" data-i="' + i + '" value="' + a.kap + '"></div>'; }).join('') + '<button class="btn mt12" id="ks">Simpan</button>');
+      var s = sheet('<h3>Pengaturan Kapasitas Analis</h3><p class="small muted">Jumlah kuota kasus baru yang dapat mulai ditinjau tiap analis per hari kerja. Parameter operasional internal, bukan batas nasional.</p>' +
+        S.settings.analis.map(function (a, i) { return '<div class="field"><label>' + esc(a.nama) + '</label><input type="number" min="0" max="20" data-i="' + i + '" value="' + a.kap + '"></div>'; }).join('') + '<button class="btn mt12" id="ks">Simpan Perubahan</button>');
       s.querySelector('#ks').onclick = function () { s.querySelectorAll('input[data-i]').forEach(function (inp) { S.settings.analis[+inp.dataset.i].kap = Math.max(0, Math.min(20, Math.round(+inp.value || 0))); }); A.saveSettings(); s.remove(); viewAntrean(); };
     };
   }
@@ -108,9 +135,15 @@
       else act = '<button class="btn sec" disabled>' + icon('lock') + 'Kasus hanya dapat dibuka untuk level Oranye yang belum diperiksa</button>';
     }
     var tx = T.txOf(m, 8), gaps = m.dataGaps.map(function (g) { return '<li><b>' + g.signal + '</b>: ' + esc(g.why) + '</li>'; }).join('');
-    var body = '<div class="mhead"><span class="photo">' + U.storefront(m, 72) + '</span><div><h2>' + esc(m.nama) + '</h2><div class="s">' + esc(m.id) + ' &middot; ' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + '</div><div class="mt8">' + level(lv, true) + (lv !== m.level ? '<div class="small muted mt8">Penapisan otomatis: ' + U.LV[m.level] + '</div>' : '') + '</div></div></div>' +
-      '<div class="card"><div class="scorecard">' + gauge(m.score, lv) + '<div class="sigs"><div class="small muted" style="font-weight:600">Kelompok sinyal ' + n + ' dari 3' + (qr ? ' &middot; peringkat #' + qr.rank : '') + '</div>' + [['J', 'Jejaring'], ['P', 'Perilaku'], ['K', 'Profil dan konteks']].map(function (g) { return '<div class="sig ' + (m.sig[g[0]] ? 'on' : m.sig[g[0]] === null ? 'na' : '') + '"><i>' + g[0] + '</i>' + g[1] + (m.sig[g[0]] === null ? ' <em>tidak cukup data</em>' : '') + '</div>'; }).join('') + '</div></div><p class="note">' + rule + '</p></div>' +
-      '<div class="card"><h3>Alasan sinyal</h3><p class="hint">Setiap sinyal disertai data pembanding dan periodenya. Hasil ini dari data simulasi.</p>' + signalCards(m) + '</div>' +
+    var body = '<div class="mhead"><span class="photo">' + U.storefront(m, 76) + '</span><div style="flex:1;min-width:0"><div class="flex between"><span class="card-tag">PROFIL MERCHANT</span><span class="badge b-demo">' + m.id + '</span></div><h2>' + esc(m.nama) + '</h2><div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' &middot; <span class="num">' + m.nmid + '</span></div><div class="mt8">' + level(lv, true) + (lv !== m.level ? '<div class="small muted mt8">Penapisan otomatis: ' + U.LV[m.level] + '</div>' : '') + '</div></div></div>' +
+      '<div class="card"><div class="flex between"><div><span class="card-tag">SKOR &amp; INDIKATOR</span><h3>Evaluasi Risiko Merchant</h3></div>' + (qr ? '<span class="pill st-investigasi">Peringkat #' + qr.rank + ' Prioritas</span>' : '') + '</div>' +
+      '<div class="scorecard mt8">' + gauge(m.score, lv) + '<div class="sigs"><div class="small muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Status Sinyal (' + n + ' dari 3)</div>' +
+      [['J', 'Jejaring Pembayar', m.sig.J, m.sigStatus.J], ['P', 'Perilaku Sebaya', m.sig.P, m.sigStatus.P], ['K', 'Profil &amp; Konteks', m.sig.K, m.sigStatus.K]].map(function (g) {
+        var stCls = g[2] ? 'on' : g[3] === 'tidak_cukup_data' ? 'na' : '';
+        var stTxt = g[2] ? 'Terindikasi' : g[3] === 'tidak_cukup_data' ? 'Tidak cukup data' : 'Normal';
+        return '<div class="sig ' + stCls + '"><i>' + g[0] + '</i><span>' + g[1] + '</span><b class="sig-status-txt">' + stTxt + '</b></div>';
+      }).join('') + '</div></div><p class="note">' + rule + '</p></div>' +
+      '<div class="card"><div class="flex between"><div><span class="card-tag">PEMBUKTIAN OBJEKTIF</span><h3>Rincian Dasar Sinyal</h3></div><span class="badge b-hitungan">Komparasi Sebaya</span></div><p class="hint">Setiap sinyal disertai data pembanding dan periodenya. Hasil ini dari data simulasi.</p>' + signalCards(m) + '</div>' +
       (gaps ? '<div class="card"><h3>Keterbatasan data</h3><ul class="small gaps">' + gaps + '</ul></div>' : '') +
       '<div class="card"><div class="notproof" style="margin:0"><h4>Sinyal bukan bukti</h4><ul>' + notProof(m).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></div>' +
       (c ? caseBlock(c) : '') +

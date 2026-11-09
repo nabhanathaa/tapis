@@ -78,36 +78,226 @@
     var open = cs.filter(function (c) { return A.ACTIVE.indexOf(c.status) >= 0; });
     var q = A.antrean(), K = A.kapasitas(), today = q.filter(function (x) { return x.today; }).length;
     var bat = cs.filter(function (c) { return c.status === 'Dibatasi' || c.status === 'Keberatan'; }).map(function (c) { return A.workdaysBetween(A.today(), A.addWorkdays(c.mulaiBatas, 5)); });
-    var kpi = isPJP() ? '<div class="row"><div class="kpi"><b>' + cu(q.length) + '</b><span>Belum diperiksa</span></div><div class="kpi"><b>' + cu(K) + '</b><span>Kapasitas per hari kerja</span></div><div class="kpi"><b>' + cu(open.length) + '</b><span>Kasus aktif</span></div></div>'
-      : '<div class="row"><div class="kpi"><b>' + cu(T.merchants.length) + '</b><span>Merchant simulasi</span></div><div class="kpi"><b>' + cu(cs.length) + '</b><span>Kasus simulasi</span></div><div class="kpi"><b>' + cu(open.length) + '</b><span>Kasus aktif</span></div></div>';
+
+    var jCnt = 0, pCnt = 0, kCnt = 0;
+    T.merchants.forEach(function (m) {
+      if (m.sig && m.sig.J) jCnt++;
+      if (m.sig && m.sig.P) pCnt++;
+      if (m.sig && m.sig.K) kCnt++;
+    });
+
+    var roleInfo = (A.ROLES && A.ROLES[u.role]) ? A.ROLES[u.role] : { nama: 'Petugas' };
+    var pctH = Math.round(cnt.hijau / T.merchants.length * 100);
+    var pctK = Math.round(cnt.kuning / T.merchants.length * 100);
+    var pctO = Math.round(cnt.oranye / T.merchants.length * 100);
+    var pctM = Math.round(cnt.merah / T.merchants.length * 100);
+
+    var capPercent = Math.min(100, Math.round((today / Math.max(1, K)) * 100));
+    var capStatus = today >= K ? 'Kuota Terpenuhi' : 'Tersedia (' + (K - today) + ' slot)';
+
+    var kpi = isPJP() ?
+      '<div class="kpi-grid">' +
+        '<a class="kpi-card" href="#/antrean">' +
+          '<span class="kpi-tag amber">Prioritas</span>' +
+          '<b class="num">' + cu(q.length) + '</b>' +
+          '<span>Belum diperiksa</span>' +
+        '</a>' +
+        '<a class="kpi-card" href="#/antrean">' +
+          '<span class="kpi-tag blue">Kapasitas</span>' +
+          '<b class="num">' + cu(K) + '</b>' +
+          '<span>Kuota / hari kerja</span>' +
+        '</a>' +
+        '<a class="kpi-card" href="#/kasus">' +
+          '<span class="kpi-tag green">Berjalan</span>' +
+          '<b class="num">' + cu(open.length) + '</b>' +
+          '<span>Kasus aktif</span>' +
+        '</a>' +
+      '</div>'
+      :
+      '<div class="kpi-grid">' +
+        '<div class="kpi-card">' +
+          '<span class="kpi-tag blue">Database</span>' +
+          '<b class="num">' + cu(T.merchants.length) + '</b>' +
+          '<span>Merchant dipantau</span>' +
+        '</div>' +
+        '<div class="kpi-card">' +
+          '<span class="kpi-tag amber">Simulasi</span>' +
+          '<b class="num">' + cu(cs.length) + '</b>' +
+          '<span>Total kasus</span>' +
+        '</div>' +
+        '<div class="kpi-card">' +
+          '<span class="kpi-tag green">Kasus</span>' +
+          '<b class="num">' + cu(open.length) + '</b>' +
+          '<span>Kasus aktif</span>' +
+        '</div>' +
+      '</div>';
+
+    var hero = '<div class="hello">' +
+      '<div class="hello-top">' +
+        '<div class="live-status">' +
+          '<span class="live-dot"></span>' +
+          '<span>Sistem Pemantauan Aktif</span>' +
+        '</div>' +
+        '<div class="hello-date">' + A.HARI[d.getDay()] + ', ' + A.fmtD(d) + '</div>' +
+      '</div>' +
+      '<div class="hello-head">' +
+        '<div class="hello-greet">' + greet() + ',</div>' +
+        '<h2 class="hello-name">' + esc(u.nama) + '</h2>' +
+        '<div class="hello-sub">' + esc(u.unit) + ' &bull; <span class="role-pill">' + esc(roleInfo.nama) + '</span></div>' +
+      '</div>' +
+      kpi +
+    '</div>';
+
+    var countdownHtml = (bat.length && isPJP()) ?
+      '<div class="countdown-card">' +
+        '<div class="cd-icon">' + icon('clock') + '</div>' +
+        '<div class="cd-content">' +
+          '<div class="cd-tag">BATAS HUKUM PENUNDAAN</div>' +
+          '<div class="cd-val num">' + Math.min.apply(null, bat) + ' hari kerja tersisa</div>' +
+          '<div class="cd-desc">UU 8/2010 Pasal 26: Penundaan transaksi paling lama 5 hari kerja sebelum ada penetapan penyidikan atau pencabutan.</div>' +
+        '</div>' +
+      '</div>' : '';
+
+    var sigRadar = '<div class="card sig-radar-card">' +
+      '<div class="flex between">' +
+        '<div>' +
+          '<div class="card-tag">SURVEILANS MULTI-LAYER</div>' +
+          '<h3>Tiga Pilar Sinyal Penapisan</h3>' +
+        '</div>' +
+        badge('resmi') +
+      '</div>' +
+      '<p class="hint">Memisahkan sinyal deteksi dari sanksi. Hanya merchant dengan minimal 2 dari 3 kelompok sinyal yang masuk antrean verifikasi.</p>' +
+      '<div class="sig-pills">' +
+        '<a class="sig-pill" href="#/antrean">' +
+          '<div class="sig-badge j">J</div>' +
+          '<div class="sig-info">' +
+            '<div class="sig-title">Jejaring Pembayar</div>' +
+            '<div class="sig-desc">Pembayar silang, fan-in/fan-out &amp; graf bersama</div>' +
+          '</div>' +
+          '<div class="sig-stat"><b class="num">' + jCnt + '</b><span>merchant</span></div>' +
+        '</a>' +
+        '<a class="sig-pill" href="#/antrean">' +
+          '<div class="sig-badge p">P</div>' +
+          '<div class="sig-info">' +
+            '<div class="sig-title">Perilaku Relatif Sebaya</div>' +
+            '<div class="sig-desc">Robust Z &amp; CUSUM terhadap jenis usaha sejenis</div>' +
+          '</div>' +
+          '<div class="sig-stat"><b class="num">' + pCnt + '</b><span>merchant</span></div>' +
+        '</a>' +
+        '<a class="sig-pill" href="#/antrean">' +
+          '<div class="sig-badge k">K</div>' +
+          '<div class="sig-info">' +
+            '<div class="sig-title">Profil &amp; Konteks</div>' +
+            '<div class="sig-desc">Daftar rujukan internal, anomali umur &amp; legalitas</div>' +
+          '</div>' +
+          '<div class="sig-stat"><b class="num">' + kCnt + '</b><span>merchant</span></div>' +
+        '</a>' +
+      '</div>' +
+    '</div>';
+
+    var riskBar = '<div class="risk-spectrum">' +
+      '<span class="sp-hijau" style="width:' + pctH + '%" title="Hijau ' + pctH + '%"></span>' +
+      '<span class="sp-kuning" style="width:' + pctK + '%" title="Kuning ' + pctK + '%"></span>' +
+      '<span class="sp-oranye" style="width:' + pctO + '%" title="Oranye ' + pctO + '%"></span>' +
+      (pctM ? '<span class="sp-merah" style="width:' + pctM + '%" title="Merah ' + pctM + '%"></span>' : '') +
+    '</div>';
+
+    var sebaranCard = '<div class="card">' +
+      '<div class="flex between">' +
+        '<div>' +
+          '<div class="card-tag">STATUS EKOSISTEM</div>' +
+          '<h3>Sebaran Level Merchant</h3>' +
+        '</div>' +
+        badge('demo') +
+      '</div>' +
+      '<p class="hint">' + T.merchants.length + ' merchant simulasi. Level Merah hanya ditentukan setelah verifikasi analis dan persetujuan 2 pejabat.</p>' +
+      riskBar +
+      donut(cnt, T.merchants.length) +
+      '<div class="umkm-protect-box">' +
+        icon('shield') +
+        '<div><b>Prinsip Perlindungan UMKM:</b> Angkringan malam, konter pulsa seragam, dan warung dengan lonjakan acara tetap Hijau. Jam malam dan nominal seragam tidak pernah menjadi alasan tunggal pembatasan.</div>' +
+      '</div>' +
+    '</div>';
+
+    var capCard = isPJP() ?
+      '<div class="card cap-card">' +
+        '<div class="flex between">' +
+          '<div>' +
+            '<div class="card-tag">OPERASIONAL ANALIS</div>' +
+            '<h3>Kapasitas Peninjauan Harian</h3>' +
+          '</div>' +
+          badge('asumsi') +
+        '</div>' +
+        '<p class="hint">Alokasi kuota pemeriksaan kasus baru per hari kerja agar analis dapat meninjau pembuktian secara menyeluruh.</p>' +
+        '<div class="cap-meter-wrap">' +
+          '<div class="cap-meter-header">' +
+            '<span>Alokasi Hari Ini: <b>' + today + ' dari ' + K + ' kasus</b></span>' +
+            '<span class="cap-status-pill ' + (today >= K ? 'full' : 'ok') + '">' + capStatus + '</span>' +
+          '</div>' +
+          '<div class="cap-meter-bar">' +
+            '<div class="cap-meter-fill" style="width:' + capPercent + '%"></div>' +
+          '</div>' +
+          '<div class="cap-meter-sub">' +
+            '<span><b>' + today + '</b> dijadwalkan hari ini</span>' +
+            '<span>&bull;</span>' +
+            '<span><b>' + Math.max(0, q.length - today) + '</b> merchant menunggu di antrean</span>' +
+          '</div>' +
+        '</div>' +
+        '<a class="btn sec" href="#/antrean">Buka Antrean Pemeriksaan <span class="arr">' + icon('arrow') + '</span></a>' +
+      '</div>'
+      : '';
+
     var top = q.slice(0, 3).map(function (x) { return A.itemRow(x.m); }).join('') || '<div class="empty">Tidak ada merchant Oranye yang menunggu.</div>';
-    var body = '<div class="hello"><img class="wm" src="assets/img/logo.png" alt=""><small>' + greet() + ', ' + A.HARI[d.getDay()] + ' ' + A.fmtD(d) + '</small><div class="name">' + esc(u.nama.split(' ')[0]) + '</div>' + kpi + '</div>' +
-      (bat.length && isPJP() ? '<div class="countdown">' + icon('clock') + '<div><b class="num">' + Math.min.apply(null, bat) + ' hari kerja</b><br><span>sisa batas penundaan terdekat (UU 8/2010 Pasal 26: paling lama 5 hari kerja)</span></div></div>' : '') +
-      '<div class="card"><div class="flex between"><h3>Sebaran level merchant</h3>' + badge('demo') + '</div><p class="hint">' + T.merchants.length + ' merchant simulasi. Level Merah hanya muncul setelah pemeriksaan manusia dan persetujuan dua pejabat.</p>' + donut(cnt, T.merchants.length) +
-      '<div class="note">Angkringan malam, konter pulsa bernominal seragam, dan warung dengan lonjakan acara tetap Hijau. Jam malam, nominal seragam, dan lonjakan sesaat adalah sinyal lemah yang tidak pernah berdiri sendiri.</div></div>' +
-      (isPJP() ? '<div class="card"><div class="flex between"><h3>Kapasitas pemeriksaan</h3>' + badge('asumsi') + '</div><p class="hint">Parameter operasional yang diatur tim (bukan data nasional). Saat ini ' + K + ' kasus baru dapat mulai ditinjau per hari kerja; ' + today + ' dijadwalkan hari ini, ' + Math.max(0, q.length - today) + ' menunggu kapasitas.</p><a class="btn sec" href="#/antrean">Buka antrean</a></div>' : '') +
-      (isPJP() ? '<div class="sec-title"><h2>Peringkat teratas</h2><a href="#/antrean">Lihat antrean</a></div><div class="list">' + top + '</div>' : '') +
-      (u.role === 'ppatk' ? '<div class="sec-title"><h2>Tentang LTKM</h2></div>' + A.ltkmInfo(false) + '<div class="sec-title"><h2>LTKM simulasi dari PJP</h2><a href="#/ltkm">Lihat semua</a></div><div class="list">' + cs.filter(function (c) { return c.status === 'Diteruskan'; }).map(A.caseRow).join('') + '</div>' : '') +
-      (u.role === 'bi' ? '<div class="sec-title"><h2>Pengawasan</h2><a href="#/pengawasan">Buka</a></div><div class="card"><h3>Kinerja PJP dan statistik nasional</h3><p class="hint">Indikator kinerja PJP dihitung dari kasus simulasi dan dipisahkan dari statistik LTKM nasional PPATK.</p></div>' : '') +
-      '<div class="sec-title"><h2>Angka resmi</h2><a href="#/bukti">Pusat bukti</a></div><div class="grid2">' +
+    var topList = isPJP() ?
+      '<div class="sec-title"><h2>Peringkat Prioritas Teratas</h2><a href="#/antrean">Lihat antrean (' + q.length + ')</a></div><div class="list">' + top + '</div>'
+      : '';
+
+    var ppatkList = (u.role === 'ppatk') ?
+      '<div class="sec-title"><h2>Tentang LTKM</h2></div>' + A.ltkmInfo(false) +
+      '<div class="sec-title"><h2>LTKM simulasi dari PJP</h2><a href="#/ltkm">Lihat semua</a></div><div class="list">' + cs.filter(function (c) { return c.status === 'Diteruskan'; }).map(A.caseRow).join('') + '</div>'
+      : '';
+
+    var biSection = (u.role === 'bi') ?
+      '<div class="sec-title"><h2>Pengawasan</h2><a href="#/pengawasan">Buka</a></div><div class="card"><h3>Kinerja PJP dan statistik nasional</h3><p class="hint">Indikator kinerja PJP dihitung dari kasus simulasi dan dipisahkan dari statistik LTKM nasional PPATK.</p></div>'
+      : '';
+
+    var statsGrid = '<div class="sec-title"><h2>Data Resmi PPATK &amp; BI</h2><a href="#/bukti">Pusat bukti</a></div><div class="grid2">' +
       A.stat('Frekuensi deposit judi daring melalui QRIS, Sem I 2026', cu(87.66, 2, '', '%'), 'resmi', 'PPATK, siaran pers Agustus 2026') +
       A.stat('Rata-rata satu deposit melalui QRIS', cu(Math.round(H.deposit.rata2_qris_rp), 0, 'Rp'), 'hitungan', 'dari PPATK, Laporan Semester I 2026') +
       A.stat('Merchant QRIS, Juni 2026', cu(H.qris.merchant_juta, 2, '', ' juta'), 'resmi', 'BI, siaran pers 28/159/DKom') +
-      A.stat('Laporan indikasi Perjudian, Jan-Sep 2026 dibanding 2025', cu((1 - H.m2.jan_sep_2026 / H.m2.jan_sep_2025) * 100, 1, '-', '%'), 'hitungan', 'dari PPATK, Buletin APUPPT Sep 2026') + '</div>' +
-      '<div class="sec-title"><h2>Pintasan</h2></div><div class="list menu">' +
-      A.menuLink('#/simulator', 'sliders', 'Simulator level dan ambang', 'Uji skenario merchant dan hitung PPV dengan rumus notebook') +
-      A.menuLink('#/jejaring/' + (q.length ? q[0].m.id : 'M081'), 'net', 'Jejaring pembayar', 'Graf merchant dan pembayar bersama') + '</div>';
+      A.stat('Laporan indikasi Perjudian, Jan-Sep 2026 dibanding 2025', cu((1 - H.m2.jan_sep_2026 / H.m2.jan_sep_2025) * 100, 1, '-', '%'), 'hitungan', 'dari PPATK, Buletin APUPPT Sep 2026') +
+      '</div>';
+
+    var quickGrid = '<div class="sec-title"><h2>Pusat Fitur &amp; Analisis</h2></div>' +
+      '<div class="quick-grid">' +
+        '<a class="quick-card" href="#/simulator">' +
+          '<div class="q-ic sim">' + icon('sliders') + '</div>' +
+          '<div>' +
+            '<b>Simulator Bayes</b>' +
+            '<span>Uji aturan level dan kalkulasi PPV</span>' +
+          '</div>' +
+        '</a>' +
+        '<a class="quick-card" href="#/jejaring/' + (q.length ? q[0].m.id : 'M081') + '">' +
+          '<div class="q-ic net">' + icon('net') + '</div>' +
+          '<div>' +
+            '<b>Graf Jejaring</b>' +
+            '<span>Peta pembayar bersama lintas toko</span>' +
+          '</div>' +
+        '</a>' +
+      '</div>';
+
+    var body = hero + countdownHtml + sigRadar + sebaranCard + capCard + topList + ppatkList + biSection + statsGrid + quickGrid;
     shell('TAPIS', esc(u.unit), body);
   }
 
   // ---------- menu, akun, panduan, tentang ----------
   function viewMenu() {
     var u = me(), ROLES = A.ROLES, q = A.antrean();
-    var body = '<div class="profile">' + A.avatar(u) + '<div style="position:relative;z-index:1;min-width:0"><b>' + esc(u.nama) + '</b><div class="small">' + esc(ROLES[u.role].nama) + '</div><div class="small">' + esc(u.unit) + '</div></div></div>' +
-      '<div class="list menu">' + A.menuLink('#/simulator', 'sliders', 'Simulator', 'Level merchant dan ambang Bayes') + A.menuLink('#/jejaring/' + (q.length ? q[0].m.id : 'M081'), 'net', 'Jejaring pembayar', 'Graf merchant dan pembayar') + A.menuLink('#/bukti/peta', 'map', 'Peta konteks', 'PDRB per kapita 38 provinsi') +
+    var body = '<div class="profile">' + A.avatar(u) + '<div style="position:relative;z-index:1;min-width:0"><b>' + esc(u.nama) + '</b><div class="small" style="margin-top:3px"><span class="role-pill">' + esc(ROLES[u.role].nama) + '</span></div><div class="small" style="margin-top:4px;opacity:.85">' + esc(u.unit) + '</div></div></div>' +
+      '<div class="list menu">' + A.menuLink('#/simulator', 'sliders', 'Simulator', 'Level merchant dan Simulasi Risiko') + A.menuLink('#/jejaring/' + (q.length ? q[0].m.id : 'M081'), 'net', 'Jejaring pembayar', 'Graf merchant dan pembayar') + A.menuLink('#/bukti/peta', 'map', 'Peta konteks', 'PDRB per kapita 38 provinsi') +
       (isPJP() ? A.menuLink('#/antrean', 'queue', 'Antrean', 'Peringkat prioritas dan kapasitas') : A.menuLink('#/kasus', 'folder', 'Daftar kasus', 'Status dan jejak audit')) + A.menuLink('#/data', 'file', 'Data simulasi', 'Daftar merchant dan ekspor CSV') + '</div>' +
-      '<div class="sec-title"><h2>Bantuan</h2></div><div class="list menu">' + A.menuLink('#/panduan', 'book', 'Cara TAPIS menilai', 'Sinyal, skor, level, dan dasar hukum') + A.menuLink('#/tentang', 'info', 'Tentang data', 'Sumber resmi dan data simulasi') + A.menuLink('#/akun', 'id', 'Akun', 'Profil dan pengaturan') + '</div>' +
-      '<button class="btn sec mt12" id="out">' + icon('logout') + 'Keluar</button>';
+      '<div class="sec-title"><h2>Bantuan &amp; Regulasi</h2></div><div class="list menu">' + A.menuLink('#/panduan', 'book', 'Cara TAPIS menilai', 'Sinyal, skor, level, dan dasar hukum') + A.menuLink('#/tentang', 'info', 'Tentang data', 'Sumber resmi dan data simulasi') + A.menuLink('#/akun', 'id', 'Akun &amp; Pengaturan', 'Profil pengguna dan reset data') + '</div>' +
+      '<button class="btn sec mt12" id="out">' + icon('logout') + 'Keluar dari Sesi</button>';
     shell('Menu', '', body);
     A.app.querySelector('#out').onclick = function () { S.session = null; save('session', null); location.hash = '#/masuk'; };
   }

@@ -20,3 +20,7 @@ Akun dan peran disimpan di localStorage hanya untuk demonstrasi, bukan keamanan 
 ## Jenis data
 RESMI (publikasi PPATK/BI/BPS), HITUNGAN (notebook), ASUMSI (sensitivitas, bobot, k/h CUSUM, kapasitas, FPR), SIMULASI (merchant, transaksi, pembayar, kasus, daftar rujukan, akun).
 Ekspor CSV simulasi: menu > Data simulasi.
+
+
+## Simulasi Risiko
+Menu **Simulasi Risiko** menyajikan estimasi ketepatan hasil penapisan, merchant terindikasi benar, UMKM yang salah ditandai, serta total merchant yang memerlukan pemeriksaan. Pengaturan risiko salah menandai (FPR), kemampuan menemukan merchant bermasalah (sensitivitas), dan perkiraan proporsi merchant bermasalah (prevalensi) tetap menggunakan fungsi Bayes yang sama. Nilai prevalensi rendah, proksi, dan tinggi merupakan asumsi skenario, bukan prevalensi aktual. Hasil simulasi bukan bukti pelanggaran dan tidak menggantikan pemeriksaan serta persetujuan manusia.

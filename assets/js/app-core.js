@@ -175,12 +175,17 @@
   A.menuLink = function (href, ic, t, s) { return '<a href="' + href + '"><span class="mi">' + icon(ic) + '</span><span><b>' + t + '</b><span>' + s + '</span></span>' + icon('chev', 'chev') + '</a>'; };
   A.ST_CLS = { 'Investigasi': 'investigasi', 'Menunggu klarifikasi': 'klarifikasi', 'Menunggu persetujuan': 'menunggu', 'Dibatasi': 'dibatasi', 'Keberatan': 'keberatan', 'Tidak terbukti': 'tidak', 'Diteruskan': 'diteruskan' };
   A.stPill = function (st) { return '<span class="pill st-' + (A.ST_CLS[st] || '') + '">' + st + '</span>'; };
-  A.groupsBar = function (m) { return '<div class="groups">' + ['J', 'P', 'K'].map(function (g) { return '<span class="' + (m.sig[g] ? 'on' : m.sig[g] === null ? 'na' : '') + '"></span>'; }).join('') + '</div>'; };
+  A.groupsBar = function (m) {
+    return '<div class="groups">' + ['J', 'P', 'K'].map(function (g) {
+      var cls = m.sig[g] ? 'on' : m.sig[g] === null ? 'na' : '';
+      return '<span class="' + cls + '" title="' + g + ': ' + (m.sig[g] ? 'Aktif' : m.sig[g] === null ? 'Tidak Cukup Data' : 'Aman') + '">' + g + '</span>';
+    }).join('') + '</div>';
+  };
   A.LVCOL = { hijau: '#17A673', kuning: '#E0A100', oranye: '#F07A1A', merah: '#E0413A' };
   A.itemRow = function (m, extra) {
     var c = A.caseOf(m.id), lv = A.effLevel(m);
     return '<a class="item" href="#/merchant/' + m.id + '"><span class="thumb">' + U.storefront(m, 44) + '</span><span class="meta"><div class="t">' + esc(m.nama) + '</div><div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + (c ? ' &middot; ' + c.status : '') + '</div><div style="margin-top:4px">' + U.level(lv) + (lv !== m.level ? ' <span class="small muted">penapisan: ' + U.LV[m.level] + '</span>' : '') + (extra || '') + '</div></span>' +
-      '<span class="right"><div class="score num">' + m.score + '<small>prioritas</small></div>' + A.groupsBar(m) + '</span></a>';
+      '<span class="right"><div class="score num">' + m.score + '<small>prioritas</small></div>' + A.groupsBar(m) + '</span>' + icon('chev', 'chev') + '</a>';
   };
   A.route = function () { };      // diisi oleh app.js
 })();
