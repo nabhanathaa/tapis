@@ -44,7 +44,7 @@
   function idn(v, d) { if (v === null || v === undefined || isNaN(v)) return '-'; return Number(v).toLocaleString('id-ID', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
   function rp(v) { return 'Rp' + idn(Math.round(v)); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function badge(kind) { var t = { resmi: 'Resmi', hitungan: 'Hitungan', asumsi: 'Asumsi', demo: 'Demo' }[kind]; return '<span class="badge b-' + kind + '">' + t + '</span>'; }
+  function badge(kind) { var t = { resmi: 'Resmi', hitungan: 'Hitungan', asumsi: 'Asumsi', demo: 'Simulasi' }[kind]; return '<span class="badge b-' + kind + '">' + t + '</span>'; }
   var LV = { hijau: 'Hijau', kuning: 'Kuning', oranye: 'Oranye', merah: 'Merah' };
   var LVDESC = { hijau: 'Normal', kuning: 'Pantau', oranye: 'Perlu verifikasi', merah: 'Dibatasi' };
   function level(l, long) { return '<span class="lv lv-' + l + '"><i></i>' + LV[l] + (long ? ' &middot; ' + LVDESC[l] : '') + '</span>'; }
@@ -73,10 +73,10 @@
     var X = function (i) { return L + (W - L - R) * i / (n - 1); }, Y = function (v) { return T + (H - T - B) * (1 - v / mx); };
     var up = m.band.map(function (b, i) { return X(i) + ',' + Y(b[2]); }).join(' '), lo = m.band.map(function (b, i) { return X(i) + ',' + Y(b[0]); }).reverse().join(' ');
     var med = m.band.map(function (b, i) { return (i ? 'L' : 'M') + X(i) + ',' + Y(b[1]); }).join('');
-    var line = m.daily.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); }).join('');
+    var line = '', pen = false; m.daily.forEach(function (v, i) { if (v === null || v === undefined) { pen = false; return; } line += (pen ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); pen = true; });
     var g = axisY(0, mx, 4).map(function (v) { return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" stroke="#E8EEF7"/><text x="' + (L - 5) + '" y="' + (Y(v) + 3.5) + '" font-size="9" text-anchor="end" fill="#94A3B8">' + idn(v) + '</text>'; }).join('');
     var xl = [0, 14, 28, 42, 55].map(function (i) { return '<text x="' + X(i) + '" y="' + (H - 6) + '" font-size="9" text-anchor="' + (i === 55 ? 'end' : i === 0 ? 'start' : 'middle') + '" fill="#94A3B8">' + (i === 55 ? 'hari ini' : '-' + (55 - i) + ' hr') + '</text>'; }).join('');
-    var base = '<rect x="' + L + '" y="' + T + '" width="' + (X(27) - L) + '" height="' + (H - T - B) + '" fill="#F4F7FC"/><text x="' + (L + 4) + '" y="' + (T + 10) + '" font-size="8.5" fill="#94A3B8">masa acuan 28 hari</text>';
+    var base = '<rect x="' + L + '" y="' + T + '" width="' + (X(27) - L) + '" height="' + (H - T - B) + '" fill="#F4F7FC"/><text x="' + (L + 4) + '" y="' + (T + 10) + '" font-size="8.5" fill="#94A3B8">riwayat acuan 28 hari</text>';
     var al = m.cusum.alarmAt >= 0 ? '<line x1="' + X(m.cusum.alarmAt) + '" x2="' + X(m.cusum.alarmAt) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#F07A1A" stroke-dasharray="3 3"/><text x="' + (X(m.cusum.alarmAt) + 3) + '" y="' + (T + 22) + '" font-size="8.5" fill="#B4530F">CUSUM alarm</text>' : '';
     return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + base + g + '<polygon points="' + up + ' ' + lo + '" fill="#3B82F6" opacity=".12"/><path d="' + med + '" fill="none" stroke="#1E5BD8" stroke-width="1" stroke-dasharray="3 3"/>' +
       '<path class="ln" pathLength="1" d="' + line + '" fill="none" stroke="#1E5BD8" stroke-width="2" stroke-linejoin="round"/>' + al + xl + '</svg>';
