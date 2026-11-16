@@ -1,11 +1,11 @@
-/* TAPIS app-core: ruang nama bersama (window.A), indeks spasial 514 wilayah, manajemen sesi multi-peran, model kasus, dan kerangka enterprise. */
+/* TAPIS app-core: ruang nama bersama (window.A), indeks spasial 514 wilayah, manajemen sesi multi-peran, model kasus, dan kerangka mobile app flagship. */
 (function () {
   'use strict';
   var T = window.TAPIS, U = window.UI, R = window.RESMI, H = R.hasil;
   var A = window.A = { T: T, U: U, R: R, H: H, app: document.getElementById('app') };
   var icon = U.icon, idn = U.idn, esc = U.esc;
 
-  // ---------- penyimpanan lokal ----------
+  // ---------- Penyimpanan Lokal ----------
   var MEM = {};
   A.load = function (k, d) { try { var v = localStorage.getItem('tapis3.' + k); return v ? JSON.parse(v) : d; } catch (e) { return MEM[k] !== undefined ? MEM[k] : d; } };
   A.save = function (k, v) { MEM[k] = v; try { localStorage.setItem('tapis3.' + k, JSON.stringify(v)); } catch (e) { } };
@@ -54,29 +54,22 @@
         kabList.push(item);
         pKabs.push(item);
       });
-      // Tentukan klaster dominan provinsi (jika seri, utamakan K4 > K3 > K2 > K1 untuk keterbacaan struktur ekonomi)
       var dom = 1, maxC = -1;
       [1, 3, 4, 2].forEach(function (cid) {
         if (cCounts[cid] > maxC) { maxC = cCounts[cid]; dom = cid; }
-      });
-      var mInProv = T.merchants.filter(function (m) {
-        return pKabs.some(function (kb) {
-          return kb.nama === m.kota || kb.nama === 'Kota ' + m.kota || kb.nama === 'Kabupaten ' + m.kota || (m.kota.indexOf('Jakarta') >= 0 && pv.n === 'DKI Jakarta');
-        });
       });
       provMeta.push({
         idx: pi,
         nama: pv.n,
         pulau: pulauOf(pi),
-        pdrbKapita: pv.v, // ribu Rp
-        pertumbuhan: pv.g, // %
+        pdrbKapita: pv.v,
+        pertumbuhan: pv.g,
         d: pv.d,
         nKab: cnt,
         kCounts: cCounts,
         domKlaster: dom,
         domProfil: profById[dom] || null,
-        kabs: pKabs,
-        merchants: mInProv
+        kabs: pKabs
       });
     });
     return {
@@ -90,17 +83,17 @@
 
   // ---------- Peran & Akun Instansi ----------
   A.ROLES = {
-    pjp_analis: { nama: 'Analis Pemantauan Merchant', inst: 'PJP Pengakuisisi', kode: 'P1', short: 'Analis PJP' },
-    pjp_pejabat: { nama: 'Pejabat Kepatuhan APU-PPT', inst: 'PJP Pengakuisisi', kode: 'P2', short: 'Pejabat PJP' },
-    bi: { nama: 'Pengawas Sistem Pembayaran', inst: 'Bank Indonesia', kode: 'BI', short: 'Pengawas BI' },
-    ppatk: { nama: 'Analis Transaksi Keuangan', inst: 'PPATK', kode: 'PPATK', short: 'Analis PPATK' }
+    pjp_analis: { nama: 'Analis Pemantauan Merchant', inst: 'PJP pengakuisisi', short: 'Analis PJP' },
+    pjp_pejabat: { nama: 'Pejabat Kepatuhan APU-PPT', inst: 'PJP pengakuisisi', short: 'Pejabat PJP' },
+    bi: { nama: 'Pengawas Sistem Pembayaran', inst: 'Bank Indonesia', short: 'Pengawas BI' },
+    ppatk: { nama: 'Analis Transaksi Keuangan', inst: 'PPATK', short: 'Analis PPATK' }
   };
   A.DEMO_USERS = [
-    { email: 'rani@arunika.demo', nama: 'Rani Kusumawardani', role: 'pjp_analis', unit: 'PJP Arunika — Unit Surveilans & Pemantauan Transaksi', nip: 'ARK-04417', pass: A.hash('demo1234'), c: '#1D5BD8', badge: 'P1 · Analis' },
-    { email: 'dimas@arunika.demo', nama: 'Dimas Prakoso', role: 'pjp_pejabat', unit: 'PJP Arunika — Divisi Kepatuhan APU-PPT (Pejabat 1)', nip: 'ARK-01102', pass: A.hash('demo1234'), c: '#091E42', badge: 'P2 · Pejabat 1' },
-    { email: 'hana@arunika.demo', nama: 'Hana Lestari', role: 'pjp_pejabat', unit: 'PJP Arunika — Divisi Kepatuhan APU-PPT (Pejabat 2)', nip: 'ARK-01108', pass: A.hash('demo1234'), c: '#0F766E', badge: 'P3 · Pejabat 2' },
-    { email: 'laras@bi.demo', nama: 'Laras Ayuningtyas', role: 'bi', unit: 'Bank Indonesia — Departemen Pengawasan Sistem Pembayaran', nip: 'BI-DPSP-2291', pass: A.hash('demo1234'), c: '#B4690E', badge: 'BI · Pengawas' },
-    { email: 'yoga@ppatk.demo', nama: 'Yoga Pratama', role: 'ppatk', unit: 'PPATK — Direktorat Analisis & Pemeriksaan Transaksi', nip: 'PPATK-0815', pass: A.hash('demo1234'), c: '#B91C1C', badge: 'PPATK · Analis' }
+    { email: 'rani@arunika.demo', nama: 'Rani Kusumawardani', role: 'pjp_analis', unit: 'PJP Arunika – Unit Pemantauan Transaksi', nip: 'ARK-04417', pass: A.hash('demo1234'), c: '#1D5BD8' },
+    { email: 'dimas@arunika.demo', nama: 'Dimas Prakoso', role: 'pjp_pejabat', unit: 'PJP Arunika – Kepatuhan APU-PPT (Pejabat 1)', nip: 'ARK-01102', pass: A.hash('demo1234'), c: '#081E46' },
+    { email: 'hana@arunika.demo', nama: 'Hana Lestari', role: 'pjp_pejabat', unit: 'PJP Arunika – Kepatuhan APU-PPT (Pejabat 2)', nip: 'ARK-01108', pass: A.hash('demo1234'), c: '#0F766E' },
+    { email: 'laras@bi.demo', nama: 'Laras Ayuningtyas', role: 'bi', unit: 'Bank Indonesia – Pengawasan Sistem Pembayaran', nip: 'BI-DPSP-2291', pass: A.hash('demo1234'), c: '#D97706' },
+    { email: 'yoga@ppatk.demo', nama: 'Yoga Pratama', role: 'ppatk', unit: 'PPATK – Direktorat Analisis Transaksi', nip: 'PPATK-0815', pass: A.hash('demo1234'), c: '#DC2626' }
   ];
 
   var S = A.S = {};
@@ -108,12 +101,6 @@
   if (!S.users || S.users.length < A.DEMO_USERS.length) {
     S.users = A.DEMO_USERS.slice();
     A.save('users', S.users);
-  } else {
-    // Sinkronisasi metadata label terbaru
-    A.DEMO_USERS.forEach(function (du) {
-      var ex = S.users.find(function (u) { return u.email === du.email; });
-      if (ex) { ex.unit = du.unit; ex.badge = du.badge; ex.c = du.c; }
-    });
   }
   S.session = A.load('session', undefined);
   if (S.session === undefined && location.hash !== '#/masuk' && location.hash !== '#/daftar') {
@@ -137,14 +124,13 @@
       if (location.hash === targetHash) A.route();
       else location.hash = targetHash;
     } else {
-      // Sesuaikan rute bila peran berganti pada halaman khusus peran
       var v = curHash.slice(2).split('/')[0] || 'beranda';
       if (u.role === 'bi' && v === 'antrean') location.hash = '#/pengawasan';
       else if (u.role === 'ppatk' && v === 'antrean') location.hash = '#/ltkm';
       else if (A.isPJP() && (v === 'pengawasan' || v === 'ltkm')) location.hash = '#/antrean';
       else A.route();
     }
-    A.toast('Peran aktif: ' + u.nama + ' (' + (A.ROLES[u.role] ? A.ROLES[u.role].short : u.role) + ')');
+    A.toast('Peran aktif: ' + u.nama.split(' ')[0] + ' (' + (A.ROLES[u.role] ? A.ROLES[u.role].short : u.role) + ')');
   };
 
   // ---------- Tanggal dan Hari Kerja ----------
@@ -249,253 +235,88 @@
   var RED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   A.animate = function (root) {
     if (!RED) root.querySelectorAll('[data-cu]').forEach(function (el) {
-      var v = +el.dataset.cu, d = +el.dataset.d, pre = el.dataset.pre, suf = el.dataset.suf, t0 = null, dur = 650;
+      var v = +el.dataset.cu, d = +el.dataset.d, pre = el.dataset.pre, suf = el.dataset.suf, t0 = null, dur = 750;
       function step(t) { if (t0 === null) t0 = t; var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + idn(v * e, d) + suf; if (k < 1) requestAnimationFrame(step); }
       requestAnimationFrame(step);
     });
-    var m = root.querySelector('main.enter'); if (m) setTimeout(function () { m.classList.remove('enter'); }, 900);
+    var m = root.querySelector('main.enter'); if (m) setTimeout(function () { m.classList.remove('enter'); }, 1200);
   };
 
+  // 5 Tab Navigasi Bawah (dengan tombol tengah menonjol seperti Pilahin)
   A.navFor = function (u) {
-    if (u.role === 'bi') return [['beranda', 'home', 'Beranda'], ['pengawasan', 'shield', 'Pengawasan'], ['bukti', 'chart', 'Pusat Bukti'], ['simulator', 'sliders', 'Simulasi'], ['menu', 'menu', 'Menu']];
-    if (u.role === 'ppatk') return [['beranda', 'home', 'Beranda'], ['ltkm', 'file', 'LTKM'], ['bukti', 'chart', 'Pusat Bukti'], ['simulator', 'sliders', 'Simulasi'], ['menu', 'menu', 'Menu']];
-    return [['beranda', 'home', 'Beranda'], ['antrean', 'queue', 'Antrean'], ['kasus', 'folder', 'Kasus'], ['bukti', 'chart', 'Pusat Bukti'], ['menu', 'menu', 'Menu']];
+    if (u.role === 'bi') return [['beranda', 'home', 'Beranda'], ['pengawasan', 'shield', 'Pengawasan'], ['simulator', 'scale', 'Simulasi', true], ['bukti', 'chart', 'Bukti'], ['menu', 'user', 'Akun']];
+    if (u.role === 'ppatk') return [['beranda', 'home', 'Beranda'], ['ltkm', 'file', 'LTKM'], ['simulator', 'scale', 'Simulasi', true], ['bukti', 'chart', 'Bukti'], ['menu', 'user', 'Akun']];
+    return [['beranda', 'home', 'Beranda'], ['antrean', 'queue', 'Antrean'], ['kasus', 'scale', 'Kasus', true], ['bukti', 'chart', 'Bukti'], ['menu', 'user', 'Akun']];
   };
 
-  function sidebarSections(u) {
-    var qCnt = A.unhandled().length;
-    var activeCases = S.cases.filter(function (c) { return A.ACTIVE.indexOf(c.status) >= 0; }).length;
-    var ltkmCnt = S.cases.filter(function (c) { return c.status === 'Diteruskan'; }).length;
-
-    var sec1 = [
-      { id: 'beranda', href: '#/beranda', ic: 'home', label: 'Beranda Eksekutif' }
-    ];
-    if (u.role === 'bi') {
-      sec1.push({ id: 'pengawasan', href: '#/pengawasan', ic: 'shield', label: 'Pengawasan Sistem Pembayaran' });
-      sec1.push({ id: 'kasus', href: '#/kasus', ic: 'folder', label: 'Audit Kasus PJP', badge: activeCases });
-    } else if (u.role === 'ppatk') {
-      sec1.push({ id: 'ltkm', href: '#/ltkm', ic: 'file', label: 'Laporan LTKM Masuk', badge: ltkmCnt });
-      sec1.push({ id: 'jejaring', href: '#/jejaring/M081', ic: 'net', label: 'Graf Jejaring Pembayar' });
-    } else {
-      sec1.push({ id: 'antrean', href: '#/antrean', ic: 'queue', label: 'Antrean Verifikasi', badge: qCnt, badgeTone: 'amber' });
-      sec1.push({ id: 'kasus', href: '#/kasus', ic: 'folder', label: 'Manajemen Kasus & Audit', badge: activeCases });
-      sec1.push({ id: 'jejaring', href: '#/jejaring/M081', ic: 'net', label: 'Graf Jejaring Pembayar' });
-    }
-
-    var sec2 = [
-      { id: 'bukti-ringkas', href: '#/bukti/ringkas', ic: 'chart', label: 'Pusat Bukti Nasional', match: function (h) { return h.indexOf('#/bukti') === 0 && h.indexOf('#/bukti/klaster') !== 0 && h.indexOf('#/bukti/peta') !== 0; } },
-      { id: 'bukti-klaster', href: '#/bukti/klaster', ic: 'map', label: 'Peta & Klaster 514 Wilayah', badge: '514', badgeTone: 'blue', match: function (h) { return h.indexOf('#/bukti/klaster') === 0 || h.indexOf('#/bukti/peta') === 0; } },
-      { id: 'sim-risiko', href: '#/simulator/risiko', ic: 'sliders', label: 'Simulasi Risiko (Bayes)', match: function (h) { return h.indexOf('#/simulator/risiko') === 0 || h.indexOf('#/simulator/ambang') === 0; } },
-      { id: 'sim-level', href: '#/simulator/level', ic: 'scale', label: 'Simulator Aturan Level', match: function (h) { return h === '#/simulator' || h.indexOf('#/simulator/level') === 0; } }
-    ];
-
-    var sec3 = [
-      { id: 'data', href: '#/data', ic: 'download', label: 'Basis Data & Ekspor CSV' },
-      { id: 'panduan', href: '#/panduan', ic: 'book', label: 'Metodologi & Regulasi' },
-      { id: 'tentang', href: '#/tentang', ic: 'info', label: 'Arsitektur & Sumber Data' },
-      { id: 'akun', href: '#/akun', ic: 'id', label: 'Profil & Pengaturan Sesi' }
-    ];
-
-    return [
-      { title: 'OPERASIONAL & PENGAWASAN', items: sec1 },
-      { title: 'INTELIJEN DATA & SPASIAL', items: sec2 },
-      { title: 'TATA KELOLA & REGULASI', items: sec3 }
-    ];
-  }
+  A.statusBarHtml = function () {
+    var now = new Date();
+    var tStr = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
+    return '<div class="phone-sbar" aria-hidden="true">' +
+      '<span class="ps-time num">' + tStr + '</span>' +
+      '<div class="ps-island"></div>' +
+      '<div class="ps-icons">' +
+        '<svg viewBox="0 0 18 12" width="15" height="10" fill="currentColor"><rect x="1" y="8" width="2.5" height="3.5" rx="0.7"/><rect x="5" y="6" width="2.5" height="5.5" rx="0.7"/><rect x="9" y="3.5" width="2.5" height="8" rx="0.7"/><rect x="13" y="1" width="2.5" height="10.5" rx="0.7"/></svg>' +
+        '<svg viewBox="0 0 16 12" width="14" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1.5 4.2a10 10 0 0 1 13 0"/><path d="M4.2 7a6 6 0 0 1 7.6 0"/><circle cx="8" cy="10" r="1.2" fill="currentColor" stroke="none"/></svg>' +
+        '<svg viewBox="0 0 24 12" width="20" height="10" fill="none"><rect x="1" y="1.5" width="19" height="9" rx="2.5" stroke="currentColor" stroke-width="1.4"/><rect x="3" y="3.3" width="14" height="5.4" rx="1.2" fill="currentColor"/><path d="M21.5 4.2v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>' +
+      '</div>' +
+    '</div>';
+  };
 
   A.openCapModal = function (onDone) {
     var s = A.sheet(
-      '<div class="modal-head"><span class="card-tag">PARAMETER OPERASIONAL INTERNAL</span><h3>Pengaturan Kapasitas Harian Tim Analis</h3></div>' +
-      '<p class="small muted">Tentukan kuota maksimum kasus baru yang dapat mulai ditinjau oleh masing-masing analis per hari kerja agar pemeriksaan bukti lapangan dan dokumen tetap objektif serta tidak terburu-buru.</p>' +
-      '<div class="mt12">' +
+      '<h3>Pengaturan Kapasitas Analis</h3>' +
+      '<p class="small muted">Jumlah kuota kasus baru yang dapat mulai ditinjau tiap analis per hari kerja agar pemeriksaan bukti tetap teliti.</p>' +
       S.settings.analis.map(function (a, i) {
-        return '<div class="field"><label>' + esc(a.nama) + ' (Kasus Baru / Hari Kerja)</label><input type="number" min="0" max="20" data-i="' + i + '" value="' + a.kap + '"></div>';
+        return '<div class="field"><label>' + esc(a.nama) + '</label><input type="number" min="0" max="20" data-i="' + i + '" value="' + a.kap + '"></div>';
       }).join('') +
-      '</div>' +
-      '<div class="btnrow mt12"><button class="btn sec" id="cap-cancel">Batal</button><button class="btn" id="cap-save">Simpan Kapasitas</button></div>'
+      '<button type="button" class="btn mt12" id="ks">Simpan Perubahan</button>'
     );
-    s.querySelector('#cap-cancel').onclick = function () { s.remove(); };
-    s.querySelector('#cap-save').onclick = function () {
+    s.querySelector('#ks').onclick = function () {
       s.querySelectorAll('input[data-i]').forEach(function (inp) {
         S.settings.analis[+inp.dataset.i].kap = Math.max(0, Math.min(20, Math.round(+inp.value || 0)));
       });
       A.saveSettings();
       s.remove();
-      A.toast('Kapasitas tim diperbarui menjadi ' + A.kapasitas() + ' kasus/hari kerja');
+      A.toast('Kapasitas diperbarui: ' + A.kapasitas() + ' kasus/hari kerja');
       if (onDone) onDone(); else A.route();
     };
   };
 
   A.shell = function (title, sub, body, opt) {
     opt = opt || {};
-    var u = A.me(), curHash = location.hash || '#/beranda', cur = curHash.split('/')[1] || 'beranda', app = A.app;
-    var roleInfo = A.ROLES[u.role] || { nama: 'Petugas', inst: 'Instansi', short: 'Petugas' };
+    var u = A.me(), cur = (location.hash.split('/')[1] || 'beranda'), app = A.app;
+    var roleInfo = A.ROLES[u.role] || { short: 'Petugas' };
 
-    // Bottom navigation (Mobile)
-    var bnavHtml = A.navFor(u).map(function (x) {
-      var cnt = x[0] === 'antrean' ? A.unhandled().length : 0;
-      var dot = cnt ? '<span class="dot">' + cnt + '</span>' : '';
-      var isOn = cur === x[0] || opt.nav === x[0];
+    var n = A.navFor(u).map(function (x) {
+      var cnt = x[0] === 'antrean' ? A.unhandled().length : (x[0] === 'kasus' ? S.cases.filter(function (c) { return A.ACTIVE.indexOf(c.status) >= 0; }).length : 0);
+      var dot = (x[0] === 'antrean' && cnt) ? '<span class="dot">' + cnt + '</span>' : '';
+      var isOn = cur === x[0] || opt.nav === x[0] || (x[0] === 'menu' && (cur === 'akun' || cur === 'panduan' || cur === 'tentang' || cur === 'data'));
+      if (x[3]) {
+        return '<a href="#/' + x[0] + '" class="center-fab ' + (isOn ? 'on' : '') + '"><span class="fab-circle">' + icon(x[1]) + '</span><span class="fab-lbl">' + x[2] + '</span></a>';
+      }
       return '<a href="#/' + x[0] + '" class="' + (isOn ? 'on' : '') + '">' + icon(x[1]) + '<span>' + x[2] + '</span>' + dot + '</a>';
-    }).join('');
-
-    // Sidebar navigation (Desktop)
-    var sectionsHtml = sidebarSections(u).map(function (sec) {
-      var links = sec.items.map(function (it) {
-        var isOn = it.match ? it.match(curHash) : (cur === it.id || opt.nav === it.id);
-        var bHtml = it.badge ? '<span class="snav-badge ' + (it.badgeTone || '') + '">' + it.badge + '</span>' : '';
-        return '<a href="' + it.href + '" class="snav-link ' + (isOn ? 'on' : '') + '">' + icon(it.ic) + '<span class="snav-text">' + it.label + '</span>' + bHtml + '</a>';
-      }).join('');
-      return '<div class="snav-group"><div class="snav-title">' + sec.title + '</div>' + links + '</div>';
-    }).join('');
-
-    // Role switcher dock (PRISMA / SIRAM style)
-    var roleBtns = A.DEMO_USERS.map(function (du) {
-      var active = du.email === u.email;
-      var shortCode = du.email === 'rani@arunika.demo' ? 'P1 Analis' :
-        du.email === 'dimas@arunika.demo' ? 'P2 Pejabat 1' :
-        du.email === 'hana@arunika.demo' ? 'P3 Pejabat 2' :
-        du.email === 'laras@bi.demo' ? 'BI Pengawas' : 'PPATK';
-      return '<button type="button" class="role-sw-btn ' + (active ? 'on' : '') + '" data-sw-user="' + du.email + '" title="' + esc(du.nama + ' — ' + du.unit) + '">' + shortCode + '</button>';
     }).join('');
 
     var lead = opt.back ?
       '<button class="iconbtn" onclick="history.back()" aria-label="Kembali">' + icon('back') + '</button>' :
-      '<a class="logo-mob" href="#/beranda" aria-label="Beranda"><img src="assets/img/logo.png" alt="TAPIS"></a>';
+      '<a class="logo" href="#/beranda" aria-label="Beranda"><img src="assets/img/logo.png" alt="TAPIS"></a>';
+
+    var trail = (opt.right || '') +
+      '<a class="role-chip-top" href="#/menu" title="Ganti Peran Demo">' + esc(roleInfo.short) + '</a>' +
+      (opt.back ? '' : '<a class="avbtn" href="#/menu" aria-label="Akun & Menu">' + A.avatar(u) + '</a>');
 
     app.innerHTML =
-      '<div class="app-shell">' +
-        '<aside class="sidebar" aria-label="Navigasi Utama">' +
-          '<a class="brand-box" href="#/beranda">' +
-            '<div class="brand-logo"><img src="assets/img/logo.png" alt="Logo TAPIS"></div>' +
-            '<div class="brand-meta">' +
-              '<div class="brand-name">TAPIS <span class="brand-ver">v2.6</span></div>' +
-              '<div class="brand-sub">Surveilans &amp; Penapisan QRIS</div>' +
-            '</div>' +
-          '</a>' +
-          '<div class="snav-scroll">' + sectionsHtml + '</div>' +
-          '<div class="sidebar-foot">' +
-            '<div class="role-switcher-box">' +
-              '<div class="rs-label"><span>Peran Aktif (Klik untuk ganti)</span><span class="rs-inst">' + esc(roleInfo.inst) + '</span></div>' +
-              '<div class="rs-grid">' + roleBtns + '</div>' +
-            '</div>' +
-            '<div class="user-dock">' +
-              '<a href="#/akun" class="user-dock-main">' +
-                A.avatar(u) +
-                '<div class="ud-meta">' +
-                  '<b>' + esc(u.nama) + '</b>' +
-                  '<span>' + esc(roleInfo.nama) + ' &middot; ' + esc(u.nip) + '</span>' +
-                '</div>' +
-              '</a>' +
-              '<button type="button" class="ud-logout" id="sb-logout" title="Keluar / Layar Masuk" aria-label="Keluar">' + icon('logout') + '</button>' +
-            '</div>' +
-          '</div>' +
-        '</aside>' +
-        '<div class="workspace">' +
-          '<header class="topbar">' +
-            '<div class="topbar-left">' +
-              lead +
-              '<div class="ttl">' +
-                '<div class="breadcrumb"><span>TAPIS</span><span class="sep">/</span><span>' + esc(roleInfo.inst) + '</span></div>' +
-                '<h1>' + title + '</h1>' +
-                (sub ? '<div class="sub">' + sub + '</div>' : '') +
-              '</div>' +
-            '</div>' +
-            '<div class="topbar-right">' +
-              '<div class="global-search" id="g-search-wrap">' +
-                icon('search') +
-                '<input type="search" id="g-search" placeholder="Cari merchant, NMID, kota, atau ID kasus..." autocomplete="off">' +
-                '<div class="g-search-pop" id="g-search-pop" hidden></div>' +
-              '</div>' +
-              '<div class="sys-pill" title="Mesin Surveilans Multi-Layer J-P-K Aktif"><span class="live-dot"></span><span>Surveilans Aktif</span></div>' +
-              (opt.right || '') +
-              '<a class="top-user-pill" href="#/akun" title="Profil &amp; Pengaturan">' +
-                A.avatar(u) +
-                '<div class="tup-meta"><b>' + esc(u.nama.split(' ')[0]) + '</b><span>' + esc(roleInfo.short) + '</span></div>' +
-              '</a>' +
-            '</div>' +
-          '</header>' +
-          '<main class="page' + (A.skipAnim ? '' : ' enter') + '">' + body + '</main>' +
-          '<footer class="app-footer">' +
-            '<div class="footer-inner">' +
-              '<div class="footer-left">' +
-                '<b>TAPIS — Sistem Penapisan Risiko &amp; Prioritisasi Merchant QRIS</b>' +
-                '<span>Arsitektur Kepatuhan Berjenjang: UU No. 8 Tahun 2010 (Pasal 25, 26, 67) &middot; PBI No. 10 Tahun 2024 &middot; PADG No. 15 Tahun 2025</span>' +
-              '</div>' +
-              '<div class="footer-right">' +
-                '<a href="#/bukti/ringkas">Pusat Bukti</a>' +
-                '<a href="#/bukti/klaster">Peta 514 Wilayah</a>' +
-                '<a href="#/simulator/risiko">Simulasi Bayes</a>' +
-                '<a href="#/panduan">Metodologi</a>' +
-                '<a href="#/data">Ekspor CSV</a>' +
-              '</div>' +
-            '</div>' +
-          '</footer>' +
-        '</div>' +
-        '<nav class="bnav" aria-label="Navigasi Bawah"><div class="bnav-in">' + bnavHtml + '</div></nav>' +
-      '</div>';
+      A.statusBarHtml() +
+      '<header class="topbar">' + lead + '<div class="ttl"><h1>' + title + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + trail + '</header>' +
+      '<main class="page' + (A.skipAnim ? '' : ' enter') + '">' + body + '</main>' +
+      '<nav class="bnav" aria-label="Navigasi Utama"><div class="bnav-in">' + n + '</div></nav>';
 
     if (!A.skipAnim) { window.scrollTo(0, 0); A.animate(app); }
     A.skipAnim = false;
-
     var tb = app.querySelector('.topbar');
     window.onscroll = function () { if (tb) tb.classList.toggle('scrolled', window.scrollY > 4); };
     if (tb) tb.classList.toggle('scrolled', window.scrollY > 4);
-
-    // Bind role switcher
-    app.querySelectorAll('[data-sw-user]').forEach(function (btn) {
-      btn.onclick = function () { A.switchUser(btn.dataset.swUser); };
-    });
-
-    // Bind logout
-    var outBtn = app.querySelector('#sb-logout');
-    if (outBtn) outBtn.onclick = function () { S.session = null; A.save('session', null); location.hash = '#/masuk'; };
-
-    // Bind global search
-    var gs = app.querySelector('#g-search'), gpop = app.querySelector('#g-search-pop');
-    if (gs && gpop) {
-      gs.oninput = function () {
-        var q = gs.value.trim().toLowerCase();
-        if (!q) { gpop.hidden = true; gpop.innerHTML = ''; return; }
-        var mHits = T.merchants.filter(function (m) {
-          return (m.nama + ' ' + m.id + ' ' + m.nmid + ' ' + m.kota + ' ' + m.kategori).toLowerCase().indexOf(q) >= 0;
-        }).slice(0, 6);
-        var cHits = S.cases.filter(function (c) {
-          var m = T.byId(c.mid);
-          return (c.id + ' ' + c.status + ' ' + (m ? m.nama : '')).toLowerCase().indexOf(q) >= 0;
-        }).slice(0, 3);
-        if (!mHits.length && !cHits.length) {
-          gpop.innerHTML = '<div class="gs-empty">Tidak ditemukan merchant atau kasus untuk "' + esc(gs.value) + '"</div>';
-          gpop.hidden = false;
-          return;
-        }
-        var html = '';
-        if (mHits.length) {
-          html += '<div class="gs-sec">Merchant QRIS</div>' + mHits.map(function (m) {
-            return '<a class="gs-item" href="#/merchant/' + m.id + '">' +
-              '<div class="gs-main"><b>' + esc(m.nama) + '</b><span>' + m.id + ' &middot; ' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + '</span></div>' +
-              '<div class="gs-right">' + U.level(A.effLevel(m)) + '<span class="gs-score num">' + m.score + '</span></div>' +
-            '</a>';
-          }).join('');
-        }
-        if (cHits.length) {
-          html += '<div class="gs-sec">Berkas Kasus Pemeriksaan</div>' + cHits.map(function (c) {
-            var m = T.byId(c.mid);
-            return '<a class="gs-item" href="#/kasus/' + c.id + '">' +
-              '<div class="gs-main"><b>' + c.id + ' — ' + esc(m ? m.nama : c.mid) + '</b><span>Pemeriksa: ' + esc(c.petugas) + '</span></div>' +
-              '<div class="gs-right">' + A.stPill(c.status) + '</div>' +
-            '</a>';
-          }).join('');
-        }
-        gpop.innerHTML = html;
-        gpop.hidden = false;
-      };
-      document.addEventListener('click', function (ev) {
-        if (!app.querySelector('#g-search-wrap') || !app.querySelector('#g-search-wrap').contains(ev.target)) {
-          gpop.hidden = true;
-        }
-      }, { once: false });
-    }
   };
 
   A.toast = function (msg) {
@@ -506,34 +327,32 @@
     t.innerHTML = '<i>' + icon('check') + '</i><span></span>';
     t.querySelector('span').textContent = msg;
     document.body.appendChild(t);
-    setTimeout(function () { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; }, 2600);
-    setTimeout(function () { t.remove(); }, 2950);
+    setTimeout(function () { t.style.transition = 'opacity .3s'; t.style.opacity = '0'; }, 2400);
+    setTimeout(function () { t.remove(); }, 2750);
   };
 
   A.sheet = function (html) {
     var bg = document.createElement('div');
     bg.className = 'sheet-bg';
-    bg.innerHTML = '<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>' + html + '</div>';
+    bg.innerHTML = '<div class="sheet" role="dialog"><div class="grab"></div>' + html + '</div>';
     bg.addEventListener('click', function (e) { if (e.target === bg) bg.remove(); });
     document.body.appendChild(bg);
     return bg;
   };
 
   A.stat = function (lab, val, kind, src) {
-    return '<div class="stat">' +
-      '<div class="stat-top"><div class="lab">' + lab + '</div>' + (kind ? U.badge(kind) : '') + '</div>' +
-      '<div class="val num">' + val + '</div>' +
-      (src ? '<div class="src">' + src + '</div>' : '') +
-    '</div>';
+    return '<div class="stat"><div class="lab">' + lab + '</div><div class="val num">' + val + '</div>' + (src ? '<div class="src">' + U.badge(kind) + ' ' + src + '</div>' : '') + '</div>';
   };
-  A.src = function (s) { return '<div class="srcline">Sumber &amp; Metodologi: ' + s + '</div>'; };
-  A.menuLink = function (href, ic, t, s) { return '<a href="' + href + '"><span class="mi">' + icon(ic) + '</span><span><b>' + t + '</b><span>' + s + '</span></span>' + icon('chev', 'chev') + '</a>'; };
+  A.src = function (s) { return '<div class="srcline">Sumber: ' + s + '</div>'; };
+  A.menuLink = function (href, ic, t, s, badgeCnt) {
+    return '<a href="' + href + '"><span class="mi">' + icon(ic) + '</span><span class="m-txt"><b>' + t + '</b><span>' + s + '</span></span>' + (badgeCnt ? '<span class="m-cnt num">' + badgeCnt + '</span>' : '') + icon('chev', 'chev') + '</a>';
+  };
   A.ST_CLS = { 'Investigasi': 'investigasi', 'Menunggu klarifikasi': 'klarifikasi', 'Menunggu persetujuan': 'menunggu', 'Dibatasi': 'dibatasi', 'Keberatan': 'keberatan', 'Tidak terbukti': 'tidak', 'Diteruskan': 'diteruskan' };
   A.stPill = function (st) { return '<span class="pill st-' + (A.ST_CLS[st] || '') + '">' + st + '</span>'; };
   A.groupsBar = function (m) {
     return '<div class="groups">' + ['J', 'P', 'K'].map(function (g) {
       var cls = m.sig[g] ? 'on' : m.sig[g] === null ? 'na' : '';
-      return '<span class="' + cls + '" title="Sinyal ' + g + ': ' + (m.sig[g] ? 'Terindikasi Aktif' : m.sig[g] === null ? 'Data Tidak Memadai' : 'Normal / Wajar') + '">' + g + '</span>';
+      return '<span class="' + cls + '" title="' + g + ': ' + (m.sig[g] ? 'Aktif' : m.sig[g] === null ? 'Data Kurang' : 'Normal') + '">' + g + '</span>';
     }).join('') + '</div>';
   };
   A.LVCOL = { hijau: '#0F9D6E', kuning: '#D9820B', oranye: '#E05D10', merah: '#D92D20' };
@@ -542,11 +361,11 @@
     return '<a class="item" href="#/merchant/' + m.id + '">' +
       '<span class="thumb">' + U.storefront(m, 44) + '</span>' +
       '<span class="meta">' +
-        '<div class="t">' + esc(m.nama) + ' <span class="mono-id">' + m.id + '</span></div>' +
-        '<div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' (Klaster ' + m.klaster + ')' + (c ? ' &middot; <b>Kasus: ' + c.status + '</b>' : '') + '</div>' +
-        '<div class="item-badges">' + U.level(lv) + (lv !== m.level ? ' <span class="small muted">Penapisan awal: ' + U.LV[m.level] + '</span>' : '') + ' <span class="typo-pill">' + esc(U.tagLabel(m.tag)) + '</span>' + (extra || '') + '</div>' +
+        '<div class="t">' + esc(m.nama) + '</div>' +
+        '<div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' (K' + m.klaster + ')' + (c ? ' &middot; <b>' + c.status + '</b>' : '') + '</div>' +
+        '<div style="margin-top:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">' + U.level(lv) + (lv !== m.level ? ' <span class="small muted">awal: ' + U.LV[m.level] + '</span>' : '') + (extra || '') + '</div>' +
       '</span>' +
-      '<span class="right"><div class="score num">' + m.score + '<small>Skor Prioritas</small></div>' + A.groupsBar(m) + '</span>' +
+      '<span class="right"><div class="score num">' + m.score + '<small>prioritas</small></div>' + A.groupsBar(m) + '</span>' +
       icon('chev', 'chev') +
     '</a>';
   };

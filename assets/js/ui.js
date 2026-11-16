@@ -1,4 +1,4 @@
-/* TAPIS ui helpers: sistem ikon vektor, format numerik, tipologi penapisan, grafik analitik SVG publikasi */
+/* TAPIS ui helpers: sistem ikon vektor, format numerik, tipologi penapisan, grafik analitik SVG dioptimalkan untuk layar mobile */
 (function () {
   'use strict';
   var I = {
@@ -44,11 +44,12 @@
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
     scale: '<path d="M12 3v18M5 21h14M6 7l-3 6h6ZM18 7l-3 6h6Z"/><path d="M4 7h16"/>',
     zoomIn: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/>',
-    zoomOut: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/>'
+    zoomOut: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/>',
+    swap: '<path d="M7 10 3 6l4-4"/><path d="M21 6H3"/><path d="m17 14 4 4-4 4"/><path d="M3 18h18"/>'
   };
 
   function icon(n, cls) {
-    return '<svg class="ic-svg ' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (I[n] || I.info) + '</svg>';
+    return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (I[n] || I.info) + '</svg>';
   }
 
   function idn(v, d) {
@@ -64,57 +65,55 @@
 
   function badge(kind) {
     var t = {
-      resmi: 'Publikasi Resmi',
-      hitungan: 'Komputasi Riset',
-      asumsi: 'Parameter Model',
-      demo: 'Data Terkalibrasi'
+      resmi: 'Resmi',
+      hitungan: 'Hitungan',
+      asumsi: 'Asumsi',
+      demo: 'Terkalibrasi'
     }[kind] || kind;
     return '<span class="badge b-' + kind + '">' + t + '</span>';
   }
 
   var LV = { hijau: 'Hijau', kuning: 'Kuning', oranye: 'Oranye', merah: 'Merah' };
   var LVDESC = {
-    hijau: 'Normal & Terlindungi',
-    kuning: 'Pemantauan Otomatis',
-    oranye: 'Antrean Verifikasi',
-    merah: 'Penundaan Terverifikasi'
+    hijau: 'Normal',
+    kuning: 'Pantau',
+    oranye: 'Perlu verifikasi',
+    merah: 'Dibatasi'
   };
   function level(l, long) {
     return '<span class="lv lv-' + l + '"><i></i>' + (LV[l] || l) + (long ? ' &middot; ' + LVDESC[l] : '') + '</span>';
   }
 
-  // Tipologi penapisan realistis (menggantikan kode mentah seperti P_saja, JK, kuat)
   var TAG_LABELS = {
-    normal: 'Operasional Reguler UMKM',
-    malam: 'Usaha Malam Wajar (Angkringan/Kopi)',
-    seragam: 'Harga Tetap Wajar (Pulsa/Token)',
-    acara: 'Lonjakan Musiman / Acara Lokal',
-    payer_kurang: 'Cakupan ID Pembayar Parsial',
-    riwayat_pendek: 'Merchant Baru (<28 Hari Riwayat)',
-    baru_wajar: 'Ekspansi Merchant Baru Wajar',
-    data_hilang: 'Transmisi Data Harian Parsial',
-    P_saja: 'Anomali Tunggal: Lonjakan Volume (P)',
-    K_saja: 'Anomali Tunggal: Deviasi Tiket/Profil (K)',
-    J_saja: 'Anomali Tunggal: Komunitas Pembayar (J)',
-    PJ: 'Konvergensi 2 Pilar: Volume & Jejaring (P+J)',
-    JK: 'Konvergensi 2 Pilar: Jejaring & Profil (J+K)',
-    PK: 'Konvergensi 2 Pilar: Volume & Profil Baru (P+K)',
-    kuat: 'Indikasi Kuat: Konvergensi 3 Pilar (J+P+K)'
+    normal: 'Operasional Reguler',
+    malam: 'Usaha Malam Wajar',
+    seragam: 'Harga Tetap Wajar',
+    acara: 'Lonjakan Acara Lokal',
+    payer_kurang: 'ID Pembayar Parsial',
+    riwayat_pendek: 'Merchant Baru (<28H)',
+    baru_wajar: 'Ekspansi Baru Wajar',
+    data_hilang: 'Transmisi Data Parsial',
+    P_saja: 'Anomali Volume (P)',
+    K_saja: 'Deviasi Tiket/Profil (K)',
+    J_saja: 'Komunitas Pembayar (J)',
+    PJ: 'Konvergensi Volume & Jejaring (P+J)',
+    JK: 'Konvergensi Jejaring & Profil (J+K)',
+    PK: 'Konvergensi Volume & Profil (P+K)',
+    kuat: 'Indikasi Kuat 3 Pilar (J+P+K)'
   };
   function tagLabel(tag) {
     return TAG_LABELS[tag] || tag || 'Operasional Reguler';
   }
 
   var GROUP_LABELS = {
-    normal: 'UMKM Normal / Wajar',
-    anomali: 'Anomali Parsial / Verifikasi',
-    kuat: 'Indikasi Kuat Multi-Pilar'
+    normal: 'UMKM Normal',
+    anomali: 'Anomali Parsial',
+    kuat: 'Indikasi Kuat'
   };
   function groupLabel(g) {
     return GROUP_LABELS[g] || g || '';
   }
 
-  // Emblem toko arsitektural (bersih, modern, khas perbankan/fintech)
   var AWN = {
     'Warung kelontong': ['#15459B', '#DBEAFE', '#1E3A8A'],
     'Angkringan': ['#78350F', '#FEF3C7', '#92400E'],
@@ -133,7 +132,7 @@
     var ini = m.nama
       .replace(/^(Toko|Warung|Kedai|Konter|Bakso|Mi|Angkringan|Kopi|Laundry|Bengkel|Fotokopi|Grosir|Sembako|Busana|Distro|Servis|Copy|Pulsa)\s+/i, '')
       .split(/\s+/).slice(0, 2).map(function (w) { return w[0] || ''; }).join('').toUpperCase() || 'MC';
-    return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 60 60" role="img" aria-label="Identitas visual ' + esc(m.nama) + '">' +
+    return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 60 60" role="img" aria-label="Ilustrasi toko ' + esc(m.nama) + '">' +
       '<rect width="60" height="60" rx="14" fill="' + c[1] + '"/>' +
       '<path d="M0 14C0 6.268 6.268 0 14 0h32c7.732 0 14 6.268 14 14v7H0v-7Z" fill="' + c[0] + '"/>' +
       '<text x="30" y="14.5" font-size="9.5" font-weight="800" fill="#FFFFFF" text-anchor="middle" font-family="Plus Jakarta Sans,sans-serif" letter-spacing="0.06em">' + esc(ini) + '</text>' +
@@ -145,7 +144,6 @@
       '</svg>';
   }
 
-  // ---------- Grafik Analitik Publikasi ----------
   function axisY(min, max, n) {
     var diff = Math.max(1, max - min);
     var step = niceStep(diff / (n || 4)), out = [];
@@ -158,9 +156,8 @@
     return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
   }
 
-  // Linimasa 56 hari dengan pita persentil P10-P90 sebaya, garis median, jendela acuan, dan penanda CUSUM
   function timeline(m) {
-    var W = 580, H = 225, L = 44, R = 16, T = 20, B = 32, n = m.daily.length;
+    var W = 350, H = 180, L = 36, R = 10, T = 14, B = 24, n = m.daily.length;
     var vals = m.daily.filter(function (v) { return v !== null && v !== undefined; }).concat(m.band.map(function (b) { return b[2]; }));
     var mx = Math.max(10, Math.max.apply(null, vals) * 1.12);
     var X = function (i) { return L + (W - L - R) * i / (n - 1); };
@@ -170,81 +167,49 @@
     var lo = m.band.map(function (b, i) { return X(i).toFixed(1) + ',' + Y(b[0]).toFixed(1); }).reverse().join(' ');
     var med = m.band.map(function (b, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(b[1]).toFixed(1); }).join('');
 
-    var line = '', area = '', dots = '', pen = false, firstX = null, lastX = null;
+    var line = '', pen = false;
     m.daily.forEach(function (v, i) {
       if (v === null || v === undefined) { pen = false; return; }
-      var cx = X(i).toFixed(1), cy = Y(v).toFixed(1);
-      line += (pen ? 'L' : 'M') + cx + ',' + cy;
-      if (firstX === null) firstX = cx;
-      lastX = cx;
+      line += (pen ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1);
       pen = true;
-      if (i === n - 1 || i === m.cusum.alarmAt || (m._event && (i === m._event[0] || i === m._event[0] + 1))) {
-        dots += '<circle cx="' + cx + '" cy="' + cy + '" r="3.6" fill="#FFFFFF" stroke="#091E42" stroke-width="2.2"><title>Hari ke-' + (i + 1) + ': ' + idn(v) + ' transaksi</title></circle>';
-      }
     });
 
     var g = axisY(0, mx, 4).map(function (v) {
       return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="#E2E8F0" stroke-dasharray="2 2"/>' +
-        '<text x="' + (L - 8) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" font-size="10" text-anchor="end" fill="#64748B" font-family="JetBrains Mono,monospace">' + idn(v) + '</text>';
+        '<text x="' + (L - 5) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" font-size="9" text-anchor="end" fill="#64748B">' + idn(v) + '</text>';
     }).join('');
 
     var xl = [0, 14, 28, 42, 55].map(function (i) {
-      var lbl = i === 55 ? 'Hari ke-56 (Kini)' : i === 28 ? 'H-28 (Batas Acuan)' : i === 42 ? 'H-14 (Evaluasi)' : 'H-' + (55 - i);
-      return '<text x="' + X(i).toFixed(1) + '" y="' + (H - 8) + '" font-size="10" text-anchor="' + (i === 55 ? 'end' : i === 0 ? 'start' : 'middle') + '" fill="#64748B" font-weight="500">' + lbl + '</text>';
+      return '<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" font-size="9" text-anchor="' + (i === 55 ? 'end' : i === 0 ? 'start' : 'middle') + '" fill="#64748B">' + (i === 55 ? 'hari ini' : '-' + (55 - i) + ' hr') + '</text>';
     }).join('');
 
-    var baseZone = '<rect x="' + L + '" y="' + T + '" width="' + (X(27) - L).toFixed(1) + '" height="' + (H - T - B) + '" fill="#F1F5F9" opacity="0.75"/>' +
-      '<text x="' + (L + 8) + '" y="' + (T + 14) + '" font-size="9.5" font-weight="700" fill="#475569" letter-spacing="0.03em">PERIODE ACUAN (28 HARI)</text>';
-
-    var evalZone = '<rect x="' + X(42).toFixed(1) + '" y="' + T + '" width="' + (X(55) - X(42)).toFixed(1) + '" height="' + (H - T - B) + '" fill="#EFF6FF" opacity="0.55"/>' +
-      '<line x1="' + X(42).toFixed(1) + '" x2="' + X(42).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#93C5FD" stroke-dasharray="3 3"/>' +
-      '<text x="' + (X(42) + 6).toFixed(1) + '" y="' + (T + 14) + '" font-size="9.5" font-weight="700" fill="#1D5BD8" letter-spacing="0.03em">EVALUASI 14H</text>';
+    var base = '<rect x="' + L + '" y="' + T + '" width="' + (X(27) - L).toFixed(1) + '" height="' + (H - T - B) + '" fill="#F1F5F9" opacity="0.75"/>' +
+      '<text x="' + (L + 5) + '" y="' + (T + 11) + '" font-size="8.5" font-weight="600" fill="#64748B">acuan 28 hari</text>';
 
     var al = m.cusum.alarmAt >= 0 ?
-      '<line x1="' + X(m.cusum.alarmAt).toFixed(1) + '" x2="' + X(m.cusum.alarmAt).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#EA580C" stroke-width="1.8" stroke-dasharray="4 3"/>' +
-      '<rect x="' + Math.min(W - 118, Math.max(L + 4, X(m.cusum.alarmAt) - 52)).toFixed(1) + '" y="' + (T + 20) + '" width="108" height="18" rx="4" fill="#FFF7ED" stroke="#FDBA74"/>' +
-      '<text x="' + Math.min(W - 64, Math.max(L + 58, X(m.cusum.alarmAt) + 2)).toFixed(1) + '" y="' + (T + 32) + '" font-size="9.5" font-weight="700" text-anchor="middle" fill="#9A3412">Alarm CUSUM (H' + (m.cusum.alarmAt + 1) + ')</text>' : '';
+      '<line x1="' + X(m.cusum.alarmAt).toFixed(1) + '" x2="' + X(m.cusum.alarmAt).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#EA580C" stroke-width="1.5" stroke-dasharray="3 3"/>' +
+      '<text x="' + Math.min(W - 40, X(m.cusum.alarmAt) + 4).toFixed(1) + '" y="' + (T + 22) + '" font-size="8.5" font-weight="700" fill="#B45309">Alarm CUSUM</text>' : '';
 
-    return '<div class="chart-container"><svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' +
-      baseZone + evalZone + g +
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' +
+      base + g +
       '<polygon points="' + up + ' ' + lo + '" fill="#2563EB" opacity="0.13"/>' +
-      '<path d="' + med + '" fill="none" stroke="#3B82F6" stroke-width="1.4" stroke-dasharray="4 3"/>' +
-      '<path class="ln" pathLength="1" d="' + line + '" fill="none" stroke="#091E42" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>' +
-      al + dots + xl +
-      '</svg>' +
-      '<div class="chart-legend">' +
-      '<span><i style="background:#091E42;height:3px"></i>Transaksi Harian Merchant</span>' +
-      '<span><i style="background:#3B82F6;border-bottom:2px dashed #3B82F6;height:0"></i>Median Sebaya Sejenis</span>' +
-      '<span><i style="background:rgba(37,99,235,0.22)"></i>Pita Normal P10–P90 Sebaya</span>' +
-      (m.cusum.alarmAt >= 0 ? '<span><i style="background:#EA580C"></i>Titik Alarm CUSUM Atas</span>' : '') +
-      '</div></div>';
+      '<path d="' + med + '" fill="none" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="3 3"/>' +
+      '<path class="ln" pathLength="1" d="' + line + '" fill="none" stroke="#081E46" stroke-width="2.2" stroke-linejoin="round"/>' +
+      al + xl + '</svg>';
   }
 
-  // Distribusi 24 jam transaksi
   function hours(m) {
-    var W = 580, H = 148, L = 32, R = 12, T = 16, B = 26, mx = Math.max(0.05, Math.max.apply(null, m.hours) * 1.15), bw = (W - L - R) / 24;
+    var W = 350, H = 98, L = 6, R = 6, T = 8, B = 18, mx = Math.max(0.05, Math.max.apply(null, m.hours)), bw = (W - L - R) / 24;
     var bars = m.hours.map(function (v, h) {
-      var y = T + (H - T - B) * (1 - v / mx), bh = Math.max(2, H - B - y);
-      var night = h >= 22 || h <= 4;
-      var pct = (v * 100).toFixed(1) + '%';
-      return '<g><rect class="gb" x="' + (L + h * bw + 2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw - 4).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="3" fill="' + (night ? '#091E42' : '#3B82F6') + '" opacity="' + (night ? '0.92' : '0.78') + '"><title>Pukul ' + String(h).padStart(2, '0') + '.00: ' + pct + ' transaksi</title></rect></g>';
+      var y = T + (H - T - B) * (1 - v / mx), night = h >= 22 || h <= 4;
+      return '<rect class="gb" x="' + (L + h * bw + 1.2).toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw - 2.4).toFixed(1) + '" height="' + Math.max(2, H - B - y).toFixed(1) + '" rx="2" fill="' + (night ? '#081E46' : '#60A5FA') + '"/>';
     }).join('');
-    var xl = [0, 3, 6, 9, 12, 15, 18, 21, 23].map(function (h) {
-      return '<text x="' + (L + h * bw + bw / 2).toFixed(1) + '" y="' + (H - 7) + '" font-size="9.5" text-anchor="middle" fill="#64748B" font-family="JetBrains Mono,monospace">' + String(h).padStart(2, '0') + ':00</text>';
+    var xl = [0, 6, 12, 18, 23].map(function (h) {
+      return '<text x="' + (L + h * bw + bw / 2).toFixed(1) + '" y="' + (H - 5) + '" font-size="9" text-anchor="' + (h === 0 ? 'start' : h === 23 ? 'end' : 'middle') + '" fill="#64748B">' + String(h).padStart(2, '0') + '.00</text>';
     }).join('');
-    var yl = [0, mx / 2, mx].map(function (v) {
-      var y = T + (H - T - B) * (1 - v / mx);
-      return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#E2E8F0" stroke-dasharray="2 2"/>' +
-        '<text x="' + (L - 5) + '" y="' + (y + 3).toFixed(1) + '" font-size="9" text-anchor="end" fill="#94A3B8" font-family="JetBrains Mono,monospace">' + Math.round(v * 100) + '%</text>';
-    }).join('');
-    return '<div class="chart-container"><svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + yl + bars + xl + '</svg>' +
-      '<div class="chart-legend">' +
-      '<span><i style="background:#3B82F6"></i>Jam Siang &amp; Sore (05.00–21.59)</span>' +
-      '<span><i style="background:#091E42"></i>Jam Malam &amp; Dini Hari (22.00–04.59): <b>' + idn(m.nightShare * 100, 1) + '%</b></span>' +
-      '</div></div>';
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + bars + xl + '</svg>';
   }
 
-  // Graf jejaring pembayar lintas merchant (deterministik, gaya pegas)
   function rnd2(i) { var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
   function network(center, T) {
     var ms = [center].concat(Object.keys(center.links).map(T.byId)).slice(0, 9), ids = {}, nodes = [], edges = [];
@@ -253,14 +218,12 @@
     ms.forEach(function (m) { m.uniq.forEach(function (p) { (payerHits[p] = payerHits[p] || []).push(m.id); }); });
     var shared = Object.keys(payerHits).filter(function (p) { return payerHits[p].length >= 2; });
     shared.sort(function (a, b) { return payerHits[b].length - payerHits[a].length; });
-    shared = shared.slice(0, 48);
-    var own = center.uniq.filter(function (p) { return payerHits[p].length === 1; }).slice(0, 12);
-    var CX = 260, CY = 185, RAD = 126;
+    shared = shared.slice(0, 46);
+    var own = center.uniq.filter(function (p) { return payerHits[p].length === 1; }).slice(0, 10);
+    var CX = 170, CY = 150, RAD = 108;
     ms.forEach(function (m, i) {
       var a = -Math.PI / 2 + 2 * Math.PI * i / ms.length;
-      var r = ms.length === 1 ? 0 : (i === 0 ? 0 : RAD);
-      if (i > 0) a = -Math.PI / 2 + 2 * Math.PI * (i - 1) / (ms.length - 1);
-      nodes.push({ id: m.id, t: 'm', m: m, a: a, fixed: true, x: i === 0 ? CX : CX + r * Math.cos(a), y: i === 0 ? CY : CY + r * Math.sin(a) });
+      nodes.push({ id: m.id, t: 'm', m: m, a: a, fixed: true, x: CX + RAD * Math.cos(a), y: CY + RAD * Math.sin(a) });
     });
     var idx = {}; nodes.forEach(function (n, i) { idx[n.id] = i; });
     shared.concat(own).forEach(function (p, i) {
@@ -268,99 +231,69 @@
       hs.forEach(function (mid) { x += nodes[idx[mid]].x; y += nodes[idx[mid]].y; });
       x /= hs.length; y /= hs.length;
       if (hs.length === 1) {
-        var ang = (2 * Math.PI * i) / Math.max(1, own.length);
-        x = CX + (RAD + 36) * Math.cos(ang);
-        y = CY + (RAD + 36) * Math.sin(ang);
+        var mm = nodes[idx[hs[0]]];
+        x = CX + (RAD + 26) * Math.cos(mm.a + (i % 5 - 2) * 0.09);
+        y = CY + (RAD + 26) * Math.sin(mm.a + (i % 5 - 2) * 0.09);
       }
-      nodes.push({ id: p, t: 'p', shared: hs.length, listed: !!T.listed[p], x: x + (rnd2(i) - 0.5) * 42, y: y + (rnd2(i + 99) - 0.5) * 42 });
+      nodes.push({ id: p, t: 'p', shared: hs.length, listed: !!T.listed[p], x: x + (rnd2(i) - 0.5) * 30, y: y + (rnd2(i + 99) - 0.5) * 30 });
     });
     nodes.forEach(function (n, i) { idx[n.id] = i; });
     shared.concat(own).forEach(function (p) { payerHits[p].forEach(function (mid) { edges.push([idx[p], idx[mid]]); }); });
-    for (var it = 0; it < 130; it++) {
+    for (var it = 0; it < 120; it++) {
       for (var i = 0; i < nodes.length; i++) for (var j = i + 1; j < nodes.length; j++) {
         var a = nodes[i], b = nodes[j]; if (a.t === 'm' && b.t === 'm') continue;
-        var dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01; if (d2 > 1100) continue; var f = 72 / d2;
+        var dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01; if (d2 > 900) continue; var f = 60 / d2;
         if (!a.fixed) { a.x += dx * f; a.y += dy * f; } if (!b.fixed) { b.x -= dx * f; b.y -= dy * f; }
       }
       nodes.forEach(function (n) {
         if (!n.fixed) {
           var r = Math.hypot(n.x - CX, n.y - CY);
-          if (r > RAD + 44) { n.x = CX + (n.x - CX) * (RAD + 44) / r; n.y = CY + (n.y - CY) * (RAD + 44) / r; }
+          if (r > RAD + 34) { n.x = CX + (n.x - CX) * (RAD + 34) / r; n.y = CY + (n.y - CY) * (RAD + 34) / r; }
         }
       });
     }
-    var rings = '<circle cx="' + CX + '" cy="' + CY + '" r="' + (RAD * 0.55).toFixed(1) + '" fill="none" stroke="#E2E8F0" stroke-dasharray="3 3"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="' + RAD + '" fill="none" stroke="#E2E8F0" stroke-dasharray="4 4"/>';
     var es = edges.map(function (e) {
       var a = nodes[e[0]], b = nodes[e[1]];
-      var col = a.listed ? '#DC2626' : a.shared >= 3 ? '#EA580C' : '#CBD5E1';
-      var op = a.listed ? 0.55 : a.shared >= 3 ? 0.42 : 0.35;
-      return '<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" stroke="' + col + '" stroke-opacity="' + op + '" stroke-width="' + (a.listed ? 1.4 : 1) + '"/>';
+      return '<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) + '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" stroke="' + (a.shared >= 3 ? '#F07A1A' : '#CBD5E1') + '" stroke-opacity="' + (a.shared >= 3 ? 0.45 : 0.5) + '" stroke-width="1"/>';
     }).join('');
     var ns = nodes.map(function (n) {
-      if (n.t === 'p') {
-        var r = n.listed ? 4.8 : n.shared >= 3 ? 4.0 : 2.8;
-        var fill = n.listed ? '#DC2626' : n.shared >= 3 ? '#EA580C' : '#94A3B8';
-        return '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + r + '" fill="' + fill + '" stroke="#FFFFFF" stroke-width="1"><title>Pembayar ' + esc(n.id) + ' (' + n.shared + ' merchant' + (n.listed ? ', cocok daftar rujukan' : '') + ')</title></circle>';
-      }
-      var me = n.m === center;
-      var col = { hijau: '#0F9D6E', kuning: '#D9820B', oranye: '#E05D10', merah: '#D92D20' }[n.m.level] || '#1D5BD8';
-      var bw = me ? 24 : 20;
-      var ty = me ? (n.y - 16) : (n.y + Math.sin(n.a) * 20 + 3);
-      var tx = me ? n.x : (n.x + Math.cos(n.a) * 18);
-      var anchor = me ? 'middle' : (Math.cos(n.a) > 0.3 ? 'start' : Math.cos(n.a) < -0.3 ? 'end' : 'middle');
-      return '<g data-m="' + n.id + '" style="cursor:pointer">' +
-        '<title>' + esc(n.m.nama) + ' (' + n.id + ') — Skor ' + n.m.score + '</title>' +
-        '<rect x="' + (n.x - bw / 2).toFixed(1) + '" y="' + (n.y - bw / 2).toFixed(1) + '" width="' + bw + '" height="' + bw + '" rx="6" fill="' + (me ? '#091E42' : '#FFFFFF') + '" stroke="' + col + '" stroke-width="2.6"/>' +
-        '<text x="' + n.x.toFixed(1) + '" y="' + (n.y + 3.5).toFixed(1) + '" font-size="8.5" font-weight="800" text-anchor="middle" fill="' + (me ? '#FFFFFF' : '#091E42') + '" font-family="JetBrains Mono,monospace">' + n.id + '</text>' +
-        '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" font-size="10" text-anchor="' + anchor + '" fill="#091E42" font-weight="' + (me ? 800 : 600) + '">' + esc(n.m.nama.length > 22 ? n.m.nama.slice(0, 20) + '..' : n.m.nama) + '</text>' +
-        '</g>';
+      if (n.t === 'p') return '<circle cx="' + n.x.toFixed(1) + '" cy="' + n.y.toFixed(1) + '" r="' + (n.shared >= 3 ? 3.6 : 2.6) + '" fill="' + (n.listed ? '#E0413A' : n.shared >= 3 ? '#F07A1A' : '#94A3B8') + '"/>';
+      var me = n.m === center, col = { hijau: '#10B981', kuning: '#F59E0B', oranye: '#F07A1A', merah: '#E0413A' }[n.m.level];
+      return '<g data-m="' + n.id + '" style="cursor:pointer"><rect x="' + (n.x - 9) + '" y="' + (n.y - 9) + '" width="18" height="18" rx="4.5" fill="' + (me ? '#081E46' : '#fff') + '" stroke="' + col + '" stroke-width="2.4"/>' +
+        '<text x="' + (n.x + Math.cos(n.a) * 16).toFixed(1) + '" y="' + (n.y + Math.sin(n.a) * 16 + 3).toFixed(1) + '" font-size="8.5" text-anchor="' + (Math.cos(n.a) > 0.3 ? 'start' : Math.cos(n.a) < -0.3 ? 'end' : 'middle') + '" fill="#081E46" font-weight="' + (me ? 700 : 600) + '">' + esc(n.m.nama.length > 18 ? n.m.nama.slice(0, 17) + '.' : n.m.nama) + '</text></g>';
     }).join('');
-    return {
-      svg: '<svg class="chart net-svg" viewBox="0 0 520 370">' + rings + es + ns + '</svg>',
-      nMerchant: ms.length,
-      nShared: shared.length,
-      nListed: shared.filter(function (p) { return T.listed[p]; }).length
-    };
+    return { svg: '<svg class="chart" viewBox="-62 -8 464 316">' + es + ns + '</svg>', nMerchant: ms.length, nShared: shared.length, nListed: shared.filter(function (p) { return T.listed[p]; }).length };
   }
 
   function bars(data, o) {
     o = o || {};
-    var W = 500, H = o.h || 195, L = o.left || 16, R = 16, T = 26, B = 30;
-    var mx = o.max || Math.max.apply(null, data.map(function (d) { return d.v; })) * 1.15;
+    var W = 340, H = o.h || 165, L = o.left || 8, R = 8, T = 20, B = 24;
+    var mx = o.max || Math.max.apply(null, data.map(function (d) { return d.v; })) * 1.14;
     var bw = (W - L - R) / data.length;
-    var grid = [0.25, 0.5, 0.75, 1].map(function (f) {
-      var y = T + (H - T - B) * (1 - f);
-      return '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="#EEF2F7" stroke-dasharray="2 2"/>';
-    }).join('');
     var s = data.map(function (d, i) {
-      var y = T + (H - T - B) * (1 - d.v / mx), x = L + i * bw + bw * 0.2;
-      var w = bw * 0.6;
-      return '<g>' +
-        '<rect class="gb" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + Math.max(2, H - B - y).toFixed(1) + '" rx="6" fill="' + (d.c || '#64748B') + '"/>' +
-        '<text x="' + (x + w / 2).toFixed(1) + '" y="' + (y - 7).toFixed(1) + '" font-size="11" text-anchor="middle" font-weight="700" fill="#091E42" font-family="JetBrains Mono,monospace">' + (d.t || idn(d.v)) + '</text>' +
-        '<text x="' + (x + w / 2).toFixed(1) + '" y="' + (H - 8) + '" font-size="10.5" font-weight="600" text-anchor="middle" fill="#475569">' + esc(d.l) + '</text>' +
-        '</g>';
+      var y = T + (H - T - B) * (1 - d.v / mx), x = L + i * bw + bw * 0.16;
+      return '<rect class="gb" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + (bw * 0.68).toFixed(1) + '" height="' + Math.max(2, H - B - y).toFixed(1) + '" rx="4" fill="' + (d.c || '#94A3B8') + '"/>' +
+        '<text x="' + (x + bw * 0.34).toFixed(1) + '" y="' + (y - 5).toFixed(1) + '" font-size="9.5" text-anchor="middle" font-weight="700" fill="#081E46">' + (d.t || idn(d.v)) + '</text>' +
+        '<text x="' + (x + bw * 0.34).toFixed(1) + '" y="' + (H - 6) + '" font-size="9" text-anchor="middle" fill="#64748B" font-weight="600">' + esc(d.l) + '</text>';
     }).join('');
-    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + grid + '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '" stroke="#CBD5E1"/>' + s + '</svg>';
+    return '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '">' + s + '</svg>';
   }
 
-  // Dekomposisi visual 5 komponen skor prioritas
   function scoreBreakdown(m, W) {
     var items = [
-      { key: 'jaringan', label: 'Jejaring Pembayar Lintas Toko (J)', w: W.jaringan, val: m.parts.jaringan, col: '#1D5BD8' },
-      { key: 'sebaya', label: 'Deviasi Volume vs Sebaya (P1)', w: W.sebaya, val: m.parts.sebaya, col: '#6366F1' },
-      { key: 'perubahan', label: 'Perubahan Riwayat & CUSUM (P2)', w: W.perubahan, val: m.parts.perubahan, col: '#0284C7' },
-      { key: 'profil', label: 'Anomali Umur & Tiket Rata-rata (K1)', w: W.profil, val: m.parts.profil, col: '#D97706' },
-      { key: 'daftar', label: 'Kecocokan Daftar Rujukan (K2)', w: W.daftar, val: m.parts.daftar, col: '#DC2626' }
+      { key: 'jaringan', label: 'Jejaring Pembayar (J)', w: W.jaringan, val: m.parts.jaringan, col: '#1D5BD8' },
+      { key: 'sebaya', label: 'Deviasi vs Sebaya (P1)', w: W.sebaya, val: m.parts.sebaya, col: '#6366F1' },
+      { key: 'perubahan', label: 'Perubahan & CUSUM (P2)', w: W.perubahan, val: m.parts.perubahan, col: '#0284C7' },
+      { key: 'profil', label: 'Umur & Tiket Rata-rata (K1)', w: W.profil, val: m.parts.profil, col: '#D97706' },
+      { key: 'daftar', label: 'Daftar Rujukan (K2)', w: W.daftar, val: m.parts.daftar, col: '#DC2626' }
     ];
     return '<div class="score-breakdown">' + items.map(function (it) {
       var pct = Math.round((it.val || 0) * 100);
       var pts = ((it.w * (it.val || 0)) * 100).toFixed(1);
       return '<div class="sb-row">' +
         '<div class="sb-head">' +
-          '<span class="sb-label">' + it.label + ' <small>(Bobot ' + Math.round(it.w * 100) + '%)</small></span>' +
-          '<span class="sb-val num">+' + pts + ' pt <small>(P' + pct + ')</small></span>' +
+          '<span class="sb-label">' + it.label + ' <small>(' + Math.round(it.w * 100) + '%)</small></span>' +
+          '<span class="sb-val num">+' + pts + ' <small>(P' + pct + ')</small></span>' +
         '</div>' +
         '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%;background:' + it.col + '"></div></div>' +
       '</div>';
