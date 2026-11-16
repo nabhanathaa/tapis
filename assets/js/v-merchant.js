@@ -75,7 +75,18 @@
   function gauge(score, lv) {
     return '<div class="gauge"><svg viewBox="0 0 120 120"><defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="' + LVCOL[lv] + '"/></linearGradient></defs><circle class="trk" cx="60" cy="60" r="50" pathLength="100"/><circle class="val" cx="60" cy="60" r="50" pathLength="100" stroke="url(#gg)" stroke-dasharray="' + score + ' 100"/></svg><div class="gv"><b>' + cu(score) + '</b><span>skor prioritas</span></div></div>';
   }
-  function peerInfo(m) { var peers = T.merchants.filter(function (o) { return o !== m && o.kategori === m.kategori && o.recentVals.length >= CF.P.minRecentDays && o.umur >= 14; }), meds = peers.map(function (o) { return o.recentMed; }); return { n: peers.length, med: T.median(meds), p90: T.quantile(meds, 0.9), avgMed: T.median(T.merchants.filter(function (o) { return o !== m && o.kategori === m.kategori; }).map(function (o) { return o.stat.meanAmt; })) }; }
+  function peerInfo(m) {
+    var peers = T.merchants.filter(function (o) { return o !== m && o.kategori === m.kategori && o.recentVals.length >= CF.P.minRecentDays && o.umur >= 14; }), meds = peers.map(function (o) { return o.recentMed; });
+    var peersCluster = peers.filter(function (o) { return o.klaster === m.klaster; });
+    return {
+      n: peers.length,
+      nCluster: peersCluster.length,
+      med: T.median(meds),
+      p90: T.quantile(meds, 0.9),
+      avgMed: T.median(T.merchants.filter(function (o) { return o !== m && o.kategori === m.kategori; }).map(function (o) { return o.stat.meanAmt; })),
+      medCluster: peersCluster.length ? T.median(peersCluster.map(function (o) { return o.recentMed; })) : null
+    };
+  }
   var ST_LBL = { aktif: 'Aktif', tidak: 'Tidak aktif', tidak_cukup_data: 'Tidak cukup data' };
   function sigCard(g, title, st, text, rows) {
     return '<div class="sigcard s-' + st + '"><div class="sh"><span class="tag ' + g.toLowerCase() + '">' + g + '</span><b>' + title + '</b><em>' + ST_LBL[st] + '</em></div><p>' + text + '</p>' + (rows ? '<dl class="kv cmp">' + rows + '</dl>' : '') + '</div>';
@@ -96,14 +107,24 @@
     if (m.sigStatus.P === 'tidak_cukup_data') pText = 'Data harian dalam 14 hari terakhir kurang dari ' + CF.P.minRecentDays + ' hari, sehingga perubahan tidak dapat dinilai.';
     else {
       pText = m.pActive ? 'Volume harian 14 hari terakhir tetap tinggi dibanding ' + esc(m.kategori.toLowerCase()) + ' sejenis' + (m.ownZ !== null ? ' dan dibanding riwayat merchant sendiri' : '') + '.' : m.transient ? 'Ada ' + m.elevDays + ' hari dengan lonjakan, lalu kembali normal. Lonjakan sesaat (akhir pekan atau acara lokal) dicatat tetapi <b>tidak</b> dianggap sinyal.' : 'Volume sejalan dengan usaha sejenis dan riwayat sendiri.';
-      pRows += kv('Median transaksi/hari', 'merchant ' + idn(m.recentMed, 1) + '; sebaya ' + idn(pe.med, 1) + ' (P90 ' + idn(pe.p90, 1) + '; ' + pe.n + ' merchant)') + kv('Robust Z vs sebaya', m.peerZ === null ? 'pembanding kurang dari ' + CF.P.minPeers + ' merchant' : idn(m.peerZ, 1) + ' (ambang ' + CF.P.peerZ + ')') +
-        kv('Robust Z vs riwayat sendiri', m.ownZ === null ? 'riwayat ' + m.baseVals.length + ' hari (minimal ' + CF.P.minBaseDays + ')' : idn(m.ownZ, 1) + ' (ambang ' + CF.P.ownZ + ')') + kv('CUSUM atas (ilustratif)', m.cusum.alarmAt >= 0 ? 'melewati h = ' + CF.cusum.h + ' pada hari ke-' + (m.cusum.alarmAt + 1) : 'tidak melewati h = ' + CF.cusum.h) + kv('Hari tinggi / data hilang', m.elevDays + ' hari / ' + idn(m.pData.missingShare * 100) + '%');
+      pRows += kv('Kelompok pembanding berlapis', 'Lapis 1: Klaster ' + m.klaster + ' (' + esc(m.klasterNama) + ') &rarr; Lapis 2: ' + esc(m.kategori) + ' &rarr; Lapis 3: ' + esc(m.usaha)) +
+        kv('Median transaksi/hari', 'merchant ' + idn(m.recentMed, 1) + '; sebaya kategori ' + idn(pe.med, 1) + (pe.medCluster !== null ? ' (sebaya klaster sejenis: ' + idn(pe.medCluster, 1) + ')' : '') + ' (P90 ' + idn(pe.p90, 1) + '; ' + pe.n + ' merchant)') +
+        kv('Robust Z vs sebaya', m.peerZ === null ? 'pembanding kurang dari ' + CF.P.minPeers + ' merchant' : idn(m.peerZ, 1) + ' (ambang ' + CF.P.peerZ + ')') +
+        kv('Robust Z vs riwayat sendiri', m.ownZ === null ? 'riwayat ' + m.baseVals.length + ' hari (minimal ' + CF.P.minBaseDays + ')' : idn(m.ownZ, 1) + ' (ambang ' + CF.P.ownZ + ')') +
+        kv('CUSUM atas (ilustratif)', m.cusum.alarmAt >= 0 ? 'melewati h = ' + CF.cusum.h + ' pada hari ke-' + (m.cusum.alarmAt + 1) : 'tidak melewati h = ' + CF.cusum.h) +
+        kv('Hari tinggi / data hilang', m.elevDays + ' hari / ' + idn(m.pData.missingShare * 100) + '%');
     }
     out += sigCard('P', 'Perilaku relatif sebaya', m.sigStatus.P, pText, pRows);
     // K
     var k = []; if (m.newHot) k.push('merchant baru (' + m.umur + ' hari) dengan volume di atas ' + CF.K.newHotMult + ' kali persentil 90 sebaya'); if (Math.abs(m.tickZ) >= CF.K.tickZ) k.push('nominal rata-rata ' + rp(m.stat.meanAmt) + ' tidak lazim untuk kategori ini (Robust Z ' + idn(m.tickZ, 1) + ')'); if (m.listStrong.length) k.push(m.listStrong.length + ' pembayar cocok dengan daftar rujukan berkeyakinan sedang atau tinggi');
-    var kRows = kv('Kategori / MCC', esc(m.kategori) + ' / ' + m.mcc) + kv('Umur merchant', m.umur + ' hari (ambang baru ' + CF.K.newDays + ')') + kv('Nominal rata-rata', rp(m.stat.meanAmt) + '; median kategori sejenis ' + rp(pe.avgMed)) + kv('Profil usaha', esc(m.usaha) + '; dokumen: ' + esc(m.dokumenUsaha));
+    var kRows = kv('Konteks Wilayah (PDRB)', 'Klaster ' + m.klaster + ': ' + esc(m.klasterNama) + ' &middot; ' + esc(m.kota)) +
+      kv('Sektor Dominan Wilayah', esc(m.klasterSektor)) +
+      kv('Kategori / MCC', esc(m.kategori) + ' / ' + m.mcc) +
+      kv('Umur merchant', m.umur + ' hari (ambang baru ' + CF.K.newDays + ')') +
+      kv('Nominal rata-rata', rp(m.stat.meanAmt) + '; median kategori sejenis ' + rp(pe.avgMed)) +
+      kv('Profil usaha', esc(m.usaha) + '; dokumen: ' + esc(m.dokumenUsaha));
     if (m.listMatches.length) kRows += kv('Daftar rujukan', m.listMatches.map(function (e) { return esc(e.payer_id) + ': ' + esc(e.sumber) + ', diperbarui ' + e.tanggal + ', dasar ' + esc(e.dasar) + ', keyakinan ' + e.keyakinan; }).join('<br>'));
+    kRows += kv('Peran Klaster di TAPIS', 'Informasi latar belakang ekonomi wilayah (bukan indikator risiko judi)');
     out += sigCard('K', 'Profil dan konteks', m.sigStatus.K, k.length ? k.join('; ') + '.' : 'Profil usaha sesuai pola transaksi dan tidak ada kecocokan daftar rujukan.', kRows);
     return out;
   }
@@ -135,7 +156,7 @@
       else act = '<button class="btn sec" disabled>' + icon('lock') + 'Kasus hanya dapat dibuka untuk level Oranye yang belum diperiksa</button>';
     }
     var tx = T.txOf(m, 8), gaps = m.dataGaps.map(function (g) { return '<li><b>' + g.signal + '</b>: ' + esc(g.why) + '</li>'; }).join('');
-    var body = '<div class="mhead"><span class="photo">' + U.storefront(m, 76) + '</span><div style="flex:1;min-width:0"><div class="flex between"><span class="card-tag">PROFIL MERCHANT</span><span class="badge b-demo">' + m.id + '</span></div><h2>' + esc(m.nama) + '</h2><div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' &middot; <span class="num">' + m.nmid + '</span></div><div class="mt8">' + level(lv, true) + (lv !== m.level ? '<div class="small muted mt8">Penapisan otomatis: ' + U.LV[m.level] + '</div>' : '') + '</div></div></div>' +
+    var body = '<div class="mhead"><span class="photo">' + U.storefront(m, 76) + '</span><div style="flex:1;min-width:0"><div class="flex between"><span class="card-tag">PROFIL MERCHANT</span><span class="badge b-demo">' + m.id + '</span></div><h2>' + esc(m.nama) + '</h2><div class="s">' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' &middot; <span class="badge b-resmi" title="' + esc(m.klasterSektor) + '">Klaster ' + m.klaster + ' (' + esc(m.klasterNama) + ')</span> &middot; <span class="num">' + m.nmid + '</span></div><div class="mt8">' + level(lv, true) + (lv !== m.level ? '<div class="small muted mt8">Penapisan otomatis: ' + U.LV[m.level] + '</div>' : '') + '</div></div></div>' +
       '<div class="card"><div class="flex between"><div><span class="card-tag">SKOR &amp; INDIKATOR</span><h3>Evaluasi Risiko Merchant</h3></div>' + (qr ? '<span class="pill st-investigasi">Peringkat #' + qr.rank + ' Prioritas</span>' : '') + '</div>' +
       '<div class="scorecard mt8">' + gauge(m.score, lv) + '<div class="sigs"><div class="small muted" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Status Sinyal (' + n + ' dari 3)</div>' +
       [['J', 'Jejaring Pembayar', m.sig.J, m.sigStatus.J], ['P', 'Perilaku Sebaya', m.sig.P, m.sigStatus.P], ['K', 'Profil &amp; Konteks', m.sig.K, m.sigStatus.K]].map(function (g) {
@@ -151,7 +172,19 @@
       '<div class="card"><h3>Jam transaksi</h3><p class="hint">Batang gelap = pukul 22.00-05.00. Jam buka tercatat ' + String(m.jamBuka[0]).padStart(2, '0') + '.00-' + String(m.jamBuka[1]).padStart(2, '0') + '.00. Pola jam tidak pernah dipakai sendirian.</p>' + U.hours(m) + '</div>' +
       '<div class="card"><h3>Transaksi 14 hari terakhir</h3><dl class="kv mt8">' + kv('Transaksi (berhasil / gagal)', idn(m.stat.ok14) + ' / ' + idn(m.stat.gagal14)) + kv('Pembayar unik', idn(m.stat.payerUnik)) + kv('Nominal rata-rata / median / P90', rp(m.stat.meanAmt) + ' / ' + rp(m.stat.medAmt) + ' / ' + rp(m.stat.p90Amt)) + kv('Nominal terbanyak', idn(m.stat.modalShare * 100) + '% transaksi') + kv('Di luar jam buka', idn(m.stat.outsideShare * 100) + '%') + '</dl>' +
       '<div class="tblwrap mt8"><table class="mini"><thead><tr><th>Waktu</th><th>Pembayar</th><th class="r">Nominal</th><th>Status</th></tr></thead><tbody>' + tx.map(function (t) { return '<tr><td class="num small">' + t.timestamp + '</td><td class="small">' + esc(t.payer_id || 'tidak tercatat') + '</td><td class="r num">' + idn(t.amount) + '</td><td class="small">' + t.transaction_status + '</td></tr>'; }).join('') + '</tbody></table></div><p class="small muted mt8">Delapan transaksi terbaru dari ledger simulasi. Ekspor lengkap di menu Data simulasi.</p></div>' +
-      '<div class="card"><h3>Identitas merchant</h3><dl class="kv mt8">' + kv('NMID', '<span class="num">' + m.nmid + '</span>') + kv('MCC', m.mcc) + kv('Kriteria usaha', esc(m.usaha)) + kv('Pemilik', esc(m.pemilik)) + kv('Umur merchant', m.umur + ' hari') + kv('PJP', esc(m.pjp)) + kv('Dokumen usaha', esc(m.dokumenUsaha)) + kv('Skenario simulasi', esc(m.tag)) + '</dl>' +
+      '<div class="card"><h3>Identitas merchant</h3><dl class="kv mt8">' +
+      kv('NMID', '<span class="num">' + m.nmid + '</span>') +
+      kv('MCC', m.mcc) +
+      kv('Kriteria usaha', esc(m.usaha)) +
+      kv('Wilayah operasional', esc(m.kota)) +
+      kv('Klaster PDRB Wilayah', 'Klaster ' + m.klaster + ' &mdash; ' + esc(m.klasterNama)) +
+      kv('Sektor Dominan Wilayah', esc(m.klasterSektor)) +
+      kv('Fungsi Klaster di TAPIS', 'Lapisan pembanding kontekstual (bukan penentu risiko langsung)') +
+      kv('Pemilik', esc(m.pemilik)) +
+      kv('Umur merchant', m.umur + ' hari') +
+      kv('PJP', esc(m.pjp)) +
+      kv('Dokumen usaha', esc(m.dokumenUsaha)) +
+      kv('Skenario simulasi', esc(m.tag)) + '</dl>' +
       (m.catatanSimulasi ? '<p class="warnnote">' + esc(m.catatanSimulasi) + '</p>' : '') + '</div>' +
       (m.nLinks || m.jData ? '<a class="btn sec" href="#/jejaring/' + m.id + '" style="margin-bottom:10px">' + icon('net') + 'Lihat jejaring pembayar</a>' : '') + act;
     shell('Profil merchant', m.nmid, body, { back: true, nav: 'antrean' });
