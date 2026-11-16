@@ -225,7 +225,7 @@
       '</div>';
   }
 
-  // ---------- Spasial: Peta Interaktif 38 Provinsi & 514 Kabupaten/Kota ----------
+  // ---------- Spasial: Peta Interaktif 514 Kabupaten/Kota & 38 Provinsi ----------
   var kState = {
     layer: 'klaster',
     pulau: 'all',
@@ -233,58 +233,100 @@
     klaster: 'all',
     search: '',
     showLabels: false,
+    autoZoom: true,
     zoom514: 100
   };
 
-  function getProvinceCenter(dStr) {
+  function getProvinceBbox(dStr) {
+    var nums = dStr.match(/-?\d+(\.\d+)?/g);
+    if (!nums || nums.length < 4) return { minX: 0, maxX: 1000, minY: 0, maxY: 379.3, cx: 500, cy: 190 };
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    for (var i = 0; i < nums.length; i += 2) {
+      var x = +nums[i], y = +nums[i + 1];
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
     var parts = dStr.split('Z').filter(Boolean);
-    var bestBox = null, maxArea = -1;
+    var bestCenter = { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }, maxArea = -1;
     parts.forEach(function (part) {
-      var nums = part.match(/-?\d+(\.\d+)?/g);
-      if (!nums || nums.length < 4) return;
-      var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
-      for (var i = 0; i < nums.length; i += 2) {
-        var x = +nums[i], y = +nums[i + 1];
-        if (x < minX) minX = x; if (x > maxX) maxX = x;
-        if (y < minY) minY = y; if (y > maxY) maxY = y;
+      var pnums = part.match(/-?\d+(\.\d+)?/g);
+      if (!pnums || pnums.length < 4) return;
+      var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+      for (var j = 0; j < pnums.length; j += 2) {
+        var px = +pnums[j], py = +pnums[j + 1];
+        if (px < x0) x0 = px; if (px > x1) x1 = px;
+        if (py < y0) y0 = py; if (py > y1) y1 = py;
       }
-      var area = (maxX - minX) * (maxY - minY);
-      if (area > maxArea) { maxArea = area; bestBox = { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }; }
+      var area = (x1 - x0) * (y1 - y0);
+      if (area > maxArea) { maxArea = area; bestCenter = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }; }
     });
-    return bestBox || { cx: 500, cy: 200 };
+    return { minX: minX, maxX: maxX, minY: minY, maxY: maxY, cx: bestCenter.cx, cy: bestCenter.cy };
+  }
+
+  function computeActiveViewBox(provs, P) {
+    if (!kState.autoZoom || (kState.pulau === 'all' && kState.provIdx < 0)) {
+      return '0 0 ' + P.w + ' ' + P.h;
+    }
+    var subset = kState.provIdx >= 0 ? [provs[kState.provIdx]] : provs.filter(function (pv) { return pv.pulau === kState.pulau; });
+    if (!subset.length) return '0 0 ' + P.w + ' ' + P.h;
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    subset.forEach(function (pv) {
+      var b = getProvinceBbox(pv.d);
+      if (b.minX < minX) minX = b.minX;
+      if (b.maxX > maxX) maxX = b.maxX;
+      if (b.minY < minY) minY = b.minY;
+      if (b.maxY > maxY) maxY = b.maxY;
+    });
+    var padX = Math.max(18, (maxX - minX) * 0.12);
+    var padY = Math.max(14, (maxY - minY) * 0.16);
+    var vx = Math.max(0, minX - padX);
+    var vy = Math.max(0, minY - padY);
+    var vw = Math.min(P.w - vx, (maxX - minX) + padX * 2);
+    var vh = Math.min(P.h - vy, (maxY - minY) + padY * 2);
+    var targetRatio = P.w / P.h;
+    if (vw / vh < targetRatio) {
+      var newW = vh * targetRatio;
+      vx = Math.max(0, vx - (newW - vw) / 2);
+      vw = Math.min(P.w - vx, newW);
+    } else {
+      var newH = vw / targetRatio;
+      vy = Math.max(0, vy - (newH - vh) / 2);
+      vh = Math.min(P.h - vy, newH);
+    }
+    return vx.toFixed(1) + ' ' + vy.toFixed(1) + ' ' + vw.toFixed(1) + ' ' + vh.toFixed(1);
   }
 
   function bKlaster() {
     var SP = A.SPATIAL;
     var kl = R.klaster;
     return '<div class="grid2 mb12">' +
-        A.stat('Wilayah Pemetaan PDRB', '514 Kab/Kota', 'resmi', '38 Provinsi · 17 Sektor BPS') +
-        A.stat('Hopkins Statistic (CLR)', idn(kl.hopkins, 4), 'hitungan', '>0,75 kecenderungan klaster kuat') +
-        A.stat('Klaster 1 (Pertanian)', '292 Wilayah', 'hitungan', '56,81% kab/kota nasional') +
-        A.stat('Klaster 3 &amp; 4 (Industri/Jasa)', '205 Wilayah', 'hitungan', '162 Industri + 43 Kota Jasa') +
+        A.stat('Cakupan Spasial', '514 Kab/Kota', 'resmi', '38 Provinsi · 0 missing') +
+        A.stat('Hopkins Statistic', idn(kl.hopkins, 4), 'hitungan', 'Ruang CLR (>0,75 kuat)') +
+        A.stat('Klaster 1 (Pertanian)', '292 Wilayah', 'hitungan', '56,81% kab/kota (#013590)') +
+        A.stat('Klaster 2, 3 &amp; 4', '222 Wilayah', 'hitungan', '17 K2 · 162 K3 · 43 K4') +
       '</div>' +
 
       '<div class="card">' +
         '<div class="card-head-row">' +
           '<div>' +
-            '<span class="card-tag">PEMETAAN TEMATIK SPASIAL 38 PROVINSI &amp; 514 KAB/KOTA</span>' +
-            '<h3>Peta Interaktif Struktur Ekonomi Indonesia</h3>' +
+            '<span class="card-tag">PETA KLASTER STRUKTUR EKONOMI 514 KABUPATEN/KOTA</span>' +
+            '<h3>Peta Interaktif Semester I 2026 | Ward (K=4)</h3>' +
           '</div>' +
           badge('hitungan') +
         '</div>' +
-        '<p class="hint">Ketuk provinsi pada peta untuk melihat komposisi klaster kabupaten/kota, PDRB per kapita, dan pertumbuhan riil.</p>' +
+        '<p class="hint">Menampilkan persebaran <b>514 kabupaten/kota</b> hasil pengelompokan <i>Agglomerative Ward (K=4)</i> pada komposisi 17 lapangan usaha PDRB BPS (transformasi CLR). Ketuk wilayah provinsi atau filter klaster di bawah untuk eksplorasi detail.</p>' +
         '<div class="map-toolbar mt8">' +
           '<select id="km-layer" class="filter-select">' +
-            '<option value="klaster"' + (kState.layer === 'klaster' ? ' selected' : '') + '>Peta Dominasi Klaster Ekonomi (Ward K=4)</option>' +
-            '<option value="pdrb"' + (kState.layer === 'pdrb' ? ' selected' : '') + '>Peta PDRB per Kapita ADHB (BPS)</option>' +
-            '<option value="growth"' + (kState.layer === 'growth' ? ' selected' : '') + '>Peta Pertumbuhan PDRB Riil (%)</option>' +
-            '<option value="peta514"' + (kState.layer === 'peta514' ? ' selected' : '') + '>Peta Choropleth 514 Kab/Kota (Detail)</option>' +
+            '<option value="klaster"' + (kState.layer === 'klaster' ? ' selected' : '') + '>Peta Klaster 514 Kabupaten/Kota (Interaktif Ward K=4)</option>' +
+            '<option value="peta514"' + (kState.layer === 'peta514' ? ' selected' : '') + '>Gambar Peta Publikasi Asli (.ipynb Resolusi Penuh)</option>' +
+            '<option value="pdrb"' + (kState.layer === 'pdrb' ? ' selected' : '') + '>Peta PDRB per Kapita ADHB 38 Provinsi (BPS)</option>' +
+            '<option value="growth"' + (kState.layer === 'growth' ? ' selected' : '') + '>Peta Pertumbuhan PDRB Riil 38 Provinsi (%)</option>' +
           '</select>' +
           '<div class="filter-controls">' +
             '<select id="km-pulau" class="filter-select">' +
-              '<option value="all"' + (kState.pulau === 'all' ? ' selected' : '') + '>Semua Kepulauan</option>' +
+              '<option value="all"' + (kState.pulau === 'all' ? ' selected' : '') + '>Semua Kepulauan (Nasional)</option>' +
               SP.pulauList.map(function (pl) {
-                return '<option value="' + esc(pl) + '"' + (kState.pulau === pl ? ' selected' : '') + '>' + esc(pl) + '</option>';
+                return '<option value="' + esc(pl) + '"' + (kState.pulau === pl ? ' selected' : '') + '>Pulau ' + esc(pl) + '</option>';
               }).join('') +
             '</select>' +
             '<select id="km-prov" class="filter-select">' +
@@ -294,15 +336,30 @@
               }).join('') +
             '</select>' +
           '</div>' +
+          '<div class="chips" style="padding-top:2px">' +
+            [
+              ['all', 'Semua (514)', ''],
+              ['1', 'K1 Pertanian (292)', '#013590'],
+              ['2', 'K2 Konstruksi (17)', '#dc88bf'],
+              ['3', 'K3 Industri (162)', '#b3cd7f'],
+              ['4', 'K4 Perdagangan (43)', '#e92e2e']
+            ].map(function (c) {
+              var dot = c[2] ? '<span class="chip-dot" style="background:' + c[2] + '"></span>' : '';
+              return '<button type="button" class="chip ' + (String(kState.klaster) === c[0] ? 'on' : '') + '" data-mchip="' + c[0] + '">' + dot + c[1] + '</button>';
+            }).join('') +
+          '</div>' +
           '<div class="flex between">' +
-            '<button type="button" class="chip ' + (kState.showLabels ? 'on' : '') + '" id="km-lbl-btn">' + icon('eye') + 'Label Nilai di Peta</button>' +
-            '<button type="button" class="chip" id="km-reset-btn">' + icon('reset') + 'Reset Peta</button>' +
+            '<div class="flex">' +
+              '<button type="button" class="chip ' + (kState.showLabels ? 'on' : '') + '" id="km-lbl-btn">' + icon('eye') + 'Label Provinsi</button>' +
+              '<button type="button" class="chip ' + (kState.autoZoom ? 'on' : '') + '" id="km-zoom-btn">' + icon('zoomIn') + 'Auto-Zoom Pulau</button>' +
+            '</div>' +
+            '<button type="button" class="chip" id="km-reset-btn">' + icon('reset') + 'Reset</button>' +
           '</div>' +
         '</div>' +
         '<div id="klaster-Interactive-Stage" class="mt8"></div>' +
       '</div>' +
 
-      '<div class="sec-head"><h3>Profil 4 Klaster Struktur Ekonomi</h3><span class="small muted">17 Sektor BPS</span></div>' +
+      '<div class="sec-head"><h3>Karakteristik 4 Klaster Struktur Ekonomi</h3><span class="small muted">514 Kab/Kota</span></div>' +
       kl.profil.map(function (c) {
         var barsHtml = (c.sektor_top || []).map(function (st) {
           return '<div class="sb-row">' +
@@ -312,22 +369,22 @@
         }).join('');
         return '<div class="card cluster-card">' +
           '<div class="card-head-row">' +
-            '<div class="flex"><span style="background:' + c.warna + ';width:12px;height:12px;border-radius:3px;display:inline-block"></span><b style="font-size:13.5px;color:var(--navy-900)">Klaster ' + c.id + ' &mdash; ' + esc(c.nama) + '</b></div>' +
-            '<span class="badge b-resmi">' + c.n + ' Wilayah (' + idn(c.pct, 1) + '%)</span>' +
+            '<div class="flex"><span style="background:' + c.warna + ';width:12px;height:12px;border-radius:3px;display:inline-block;flex-shrink:0"></span><b style="font-size:13.8px;color:var(--navy-900)">Klaster ' + c.id + ' &mdash; ' + esc(c.nama) + '</b></div>' +
+            '<span class="badge b-resmi">' + c.n + ' Wilayah (' + idn(c.pct, 2) + '%)</span>' +
           '</div>' +
           '<p class="hint mt4">' + esc(c.deskripsi) + '</p>' +
           '<div class="mt8"><div class="card-tag">3 SEKTOR PDRB DOMINAN (RATA-RATA KLASTER)</div>' + barsHtml + '</div>' +
-          '<button type="button" class="btn sec sm block mt8" data-filter-kl="' + c.id + '">Lihat ' + c.n + ' Kabupaten/Kota Klaster ' + c.id + ' &darr;</button>' +
+          '<button type="button" class="btn sec sm block mt8" data-filter-kl="' + c.id + '">Sorot ' + c.n + ' Wilayah Klaster ' + c.id + ' di Peta &amp; Tabel</button>' +
         '</div>';
       }).join('') +
 
       '<div class="card" id="kab514-explorer">' +
         '<div class="card-head-row">' +
-          '<div><span class="card-tag">DIREKTORI 514 KABUPATEN/KOTA</span><h3>Eksplorasi Klaster Wilayah</h3></div>' +
+          '<div><span class="card-tag">DIREKTORI KEANGGOTAAN 514 WILAYAH</span><h3>Daftar Kabupaten/Kota per Klaster</h3></div>' +
           '<span class="badge b-hitungan" id="kab514-count">514 Wilayah</span>' +
         '</div>' +
         '<div class="search mt8">' + icon('search') + '<input id="kab514-q" placeholder="Cari kabupaten/kota atau provinsi (Mis. Surabaya, Keerom, Medan)..." value="' + esc(kState.search) + '"></div>' +
-        '<div class="chips">' +
+        '<div class="chips mt8">' +
           [['all', 'Semua (514)'], ['1', 'K1 (292)'], ['2', 'K2 (17)'], ['3', 'K3 (162)'], ['4', 'K4 (43)']].map(function (x) {
             return '<button type="button" class="chip ' + (String(kState.klaster) === x[0] ? 'on' : '') + '" data-kchip="' + x[0] + '">' + x[1] + '</button>';
           }).join('') +
@@ -336,28 +393,32 @@
       '</div>' +
 
       '<div class="card">' +
-        '<div class="card-head-row"><div><span class="card-tag">DIAGNOSTIK KOMPUTASI (.IPYNB)</span><h3>Evaluasi Model Ruang CLR (Ward K=4)</h3></div>' + badge('hitungan') + '</div>' +
+        '<div class="card-head-row"><div><span class="card-tag">DIAGNOSTIK KOMPUTASI NOTEBOOK (.IPYNB)</span><h3>Evaluasi Model Ruang CLR (K=2..8)</h3></div>' + badge('hitungan') + '</div>' +
         '<p class="hint">' + esc(kl.metodologi) + '</p>' +
         '<div class="grid2 mt8">' +
-          '<div class="mini-k"><b class="num">' + idn(kl.hopkins, 4) + '</b><span>Hopkins Statistic</span></div>' +
+          '<div class="mini-k"><b class="num">' + idn(kl.hopkins, 4) + '</b><span>Hopkins Statistic (CLR)</span></div>' +
           '<div class="mini-k"><b class="num">' + idn(kl.k4.silhouette, 4) + '</b><span>Silhouette (Ward K=4)</span></div>' +
           '<div class="mini-k"><b class="num">' + idn(kl.k4.davies_bouldin, 4) + '</b><span>Davies–Bouldin (K=4)</span></div>' +
-          '<div class="mini-k"><b class="num">' + idn(kl.k4.calinski_harabasz, 2) + '</b><span>Calinski–Harabasz</span></div>' +
+          '<div class="mini-k"><b class="num">' + idn(kl.k4.calinski_harabasz, 2) + ' &middot; <small>Dunn ' + idn(kl.k4.dunn || 0.1029, 4) + '</small></b><span>CH &amp; Dunn Index (K=4)</span></div>' +
         '</div>' +
-        '<div class="tblwrap mt8"><table class="tbl"><thead><tr><th>Algoritma</th><th class="r">K</th><th class="r">Silhouette</th><th class="r">DBI</th><th class="r">CH</th><th class="r">Rank</th></tr></thead><tbody>' +
+        '<div class="tblwrap mt8"><table class="tbl"><thead><tr><th>Model</th><th class="r">K</th><th class="r">Sil.</th><th class="r">DBI</th><th class="r">CH</th><th class="r">Dunn</th><th class="r">Rank</th></tr></thead><tbody>' +
           kl.evaluasi_model.map(function (r) {
             var isSelected = r.k === 4 && r.algoritma.indexOf('Ward') >= 0;
-            return '<tr style="' + (isSelected ? 'background:#EFF6FF;font-weight:700' : '') + '">' +
-              '<td>' + esc(r.algoritma.replace(' (Euclidean CLR)', '')) + '</td>' +
+            var isK2 = r.k === 2 && r.algoritma.indexOf('Ward') >= 0;
+            var st = isSelected ? 'background:#EFF6FF;font-weight:700' : (isK2 ? 'background:#F0FDF4' : '');
+            return '<tr style="' + st + '">' +
+              '<td>' + esc(r.algoritma) + (isSelected ? ' <span class="badge b-resmi" style="font-size:8.5px;padding:1px 5px">Dipilih</span>' : '') + '</td>' +
               '<td class="r num">' + r.k + '</td>' +
-              '<td class="r num">' + idn(r.silhouette, 3) + '</td>' +
-              '<td class="r num">' + idn(r.davies_bouldin, 3) + '</td>' +
-              '<td class="r num">' + idn(r.calinski_harabasz, 1) + '</td>' +
-              '<td class="r num">' + idn(r.rank_gabungan, 2) + '</td>' +
+              '<td class="r num">' + idn(r.silhouette, 4) + '</td>' +
+              '<td class="r num">' + idn(r.davies_bouldin, 4) + '</td>' +
+              '<td class="r num">' + idn(r.calinski_harabasz, 2) + '</td>' +
+              '<td class="r num">' + idn(r.dunn || 0.1029, 4) + '</td>' +
+              '<td class="r num font-bold">' + idn(r.rank_gabungan, 3) + '</td>' +
             '</tr>';
           }).join('') +
         '</tbody></table></div>' +
-        '<p class="warnnote mt8"><b>Bukan Peta Risiko Judi:</b> Klaster wilayah digunakan sebagai <b>Lapis 1 Pembanding Kontekstual</b> agar UMKM di daerah agraris (K1) tidak dibandingkan secara keliru dengan pusat komersial metropolitan (K4).</p>' +
+        '<p class="note mt8"><b>Mengapa Ward K=4 Dipilih:</b> Secara matematis murni, <i>Ward K=2</i> menempati peringkat pertama (Rank 1,250; Silhouette 0,4994) karena memisahkan wilayah agraris dari non-agraris. Namun untuk <b>pembanding sebaya berlapis (K &ge; 3)</b>, <b>Agglomerative Ward K=4</b> menempati peringkat terbaik (<b>Rank Rata-Rata 4,875</b>; Dunn Index 0,1029) dan mampu membedakan 4 struktur ekonomi (Pertanian, Konstruksi/Pemerintahan, Industri Pengolahan, serta Perdagangan/Jasa Perkotaan).</p>' +
+        '<p class="warnnote mt8"><b>Bukan Peta Risiko Judi Daring:</b> Klaster wilayah digunakan sebagai <b>Lapis 1 Pembanding Kontekstual</b> (Klaster Wilayah &rarr; Kategori Usaha &rarr; Skala Merchant) agar UMKM di daerah agraris (K1) tidak dibandingkan dengan ambang kota metropolitan (K4).</p>' +
       '</div>';
   }
 
@@ -372,7 +433,7 @@
     function colorForProv(pv) {
       if (kState.pulau !== 'all' && pv.pulau !== kState.pulau) return '#E2E8F0';
       if (kState.layer === 'klaster') {
-        return { 1: '#013590', 2: '#dc88bf', 3: '#84b547', 4: '#e92e2e' }[pv.domKlaster] || '#1D5BD8';
+        return { 1: '#013590', 2: '#dc88bf', 3: '#b3cd7f', 4: '#e92e2e' }[pv.domKlaster] || '#013590';
       }
       if (kState.layer === 'pdrb') {
         var t = Math.max(0, Math.min(1, (pv.pdrbKapita - loP) / (hiP - loP)));
@@ -394,40 +455,60 @@
       mapContentHtml =
         '<div class="map514-viewer">' +
           '<div class="map514-Head">' +
-            '<span class="small font-bold">Peta Choropleth 514 Kab/Kota</span>' +
+            '<span class="small font-bold">Gambar Publikasi Asli (.ipynb · 3277&times;1370 px)</span>' +
             '<div class="flex">' +
               '<button type="button" class="chip" id="z-out">' + icon('zoomOut') + '</button>' +
               '<span class="mono-badge">' + kState.zoom514 + '%</span>' +
               '<button type="button" class="chip" id="z-in">' + icon('zoomIn') + '</button>' +
-              '<button type="button" class="chip on" id="z-back-vec">Peta Vektor</button>' +
+              '<button type="button" class="chip on" id="z-back-vec">Mode Interaktif</button>' +
             '</div>' +
           '</div>' +
           '<div class="map514-scroll">' +
-            '<img src="assets/img/klaster_struktur_ekonomi.png" alt="Peta Klaster Struktur Ekonomi 514 Kabupaten/Kota" style="width:' + kState.zoom514 + '%;max-width:none;height:auto;display:block;margin:0 auto">' +
+            '<img src="assets/img/klaster_struktur_ekonomi.png" alt="Peta Klaster Struktur Ekonomi Kabupaten/Kota Indonesia Semester I 2026 | Agglomerative Ward (K=4)" style="width:' + kState.zoom514 + '%;max-width:none;height:auto;display:block;margin:0 auto">' +
           '</div>' +
         '</div>';
     } else {
+      var vbox = computeActiveViewBox(provs, P);
+      var base514Images = '';
+      if (kState.layer === 'klaster') {
+        var baseOpacity = (kState.klaster === 'all') ? '1' : '0.18';
+        base514Images = '<image href="assets/img/peta_klaster_514_layer.png" x="0" y="0" width="' + P.w + '" height="' + P.h + '" opacity="' + baseOpacity + '" preserveAspectRatio="none"/>';
+        if (kState.klaster !== 'all') {
+          base514Images += '<image href="assets/img/peta_k' + kState.klaster + '.png" x="0" y="0" width="' + P.w + '" height="' + P.h + '" opacity="1" preserveAspectRatio="none"/>';
+        }
+      }
+
       var paths = provs.map(function (pv) {
         var isSel = kState.provIdx === pv.idx;
         var dimmed = kState.pulau !== 'all' && pv.pulau !== kState.pulau;
+        var kDesc = 'K1:' + (pv.kCounts[1] || 0) + ', K2:' + (pv.kCounts[2] || 0) + ', K3:' + (pv.kCounts[3] || 0) + ', K4:' + (pv.kCounts[4] || 0);
+        if (kState.layer === 'klaster') {
+          var fill514 = dimmed ? '#F8FAFC' : (isSel ? '#F5A524' : '#000000');
+          var fop514 = dimmed ? '0.78' : (isSel ? '0.16' : '0.001');
+          var stroke514 = isSel ? '#F5A524' : 'rgba(255,255,255,0.22)';
+          var sw514 = isSel ? '2.0' : '0.4';
+          return '<path data-pidx="' + pv.idx + '" d="' + pv.d + '" fill="' + fill514 + '" fill-opacity="' + fop514 + '" stroke="' + stroke514 + '" stroke-width="' + sw514 + '" style="cursor:pointer">' +
+            '<title>' + esc(pv.nama) + ' (' + pv.nKab + ' Kab/Kota) — ' + kDesc + '</title>' +
+          '</path>';
+        }
         var fill = colorForProv(pv);
         var stroke = isSel ? '#F5A524' : '#FFFFFF';
-        var sw = isSel ? '2.4' : '0.85';
+        var sw = isSel ? '2.2' : '0.85';
         return '<path data-pidx="' + pv.idx + '" d="' + pv.d + '" fill="' + fill + '" fill-opacity="' + (dimmed ? '0.35' : '0.94') + '" stroke="' + stroke + '" stroke-width="' + sw + '" style="cursor:pointer">' +
-          '<title>' + esc(pv.nama) + ' (' + pv.nKab + ' Kab/Kota) — Dominan K' + pv.domKlaster + '</title>' +
+          '<title>' + esc(pv.nama) + ' (' + pv.nKab + ' Kab/Kota) — PDRB Rp' + idn(pv.pdrbKapita / 1000, 1) + ' Jt</title>' +
         '</path>';
       }).join('');
 
       var labelsSvg = '';
       if (kState.showLabels) {
         labelsSvg = provs.filter(function (pv) { return kState.pulau === 'all' || pv.pulau === kState.pulau; }).map(function (pv) {
-          var c = getProvinceCenter(pv.d);
-          var txt = kState.layer === 'klaster' ? ('K' + pv.domKlaster) :
+          var c = getProvinceBbox(pv.d);
+          var txt = kState.layer === 'klaster' ? ('K' + pv.domKlaster + '·' + pv.nKab) :
             kState.layer === 'pdrb' ? (idn(pv.pdrbKapita / 1000, 0) + 'jt') :
             (idn(pv.pertumbuhan, 1) + '%');
           return '<g pointer-events="none">' +
-            '<rect x="' + (c.cx - 15).toFixed(1) + '" y="' + (c.cy - 7).toFixed(1) + '" width="30" height="14" rx="4" fill="rgba(8,30,70,0.88)" stroke="#fff" stroke-width="0.6"/>' +
-            '<text x="' + c.cx.toFixed(1) + '" y="' + (c.cy + 2.5).toFixed(1) + '" font-size="8" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="JetBrains Mono,monospace">' + txt + '</text>' +
+            '<rect x="' + (c.cx - 17).toFixed(1) + '" y="' + (c.cy - 7).toFixed(1) + '" width="34" height="14" rx="4" fill="rgba(8,30,70,0.88)" stroke="#fff" stroke-width="0.6"/>' +
+            '<text x="' + c.cx.toFixed(1) + '" y="' + (c.cy + 2.5).toFixed(1) + '" font-size="7.5" font-weight="700" fill="#FFFFFF" text-anchor="middle" font-family="JetBrains Mono,monospace">' + txt + '</text>' +
           '</g>';
         }).join('');
       }
@@ -436,11 +517,12 @@
       if (kState.layer === 'klaster') {
         legendOverlay =
           '<div class="map-legend-box">' +
+            '<div class="card-tag" style="margin-bottom:5px;color:var(--ink2)">KARAKTERISTIK KLASTER (514 KABUPATEN/KOTA)</div>' +
             '<div class="mlb-items">' +
-              '<span><i style="background:#013590"></i>K1 Pertanian (292)</span>' +
-              '<span><i style="background:#dc88bf"></i>K2 Konstruksi/Pem (17)</span>' +
-              '<span><i style="background:#84b547"></i>K3 Industri (162)</span>' +
-              '<span><i style="background:#e92e2e"></i>K4 Jasa/Kota (43)</span>' +
+              '<span><i style="background:#013590"></i>Klaster 1 - Pertanian (292)</span>' +
+              '<span><i style="background:#dc88bf"></i>Klaster 2 - Konstruksi (17)</span>' +
+              '<span><i style="background:#b3cd7f"></i>Klaster 3 - Industri Pengolahan (162)</span>' +
+              '<span><i style="background:#e92e2e"></i>Klaster 4 - Perdagangan (43)</span>' +
             '</div>' +
           '</div>';
       } else if (kState.layer === 'pdrb') {
@@ -463,11 +545,17 @@
 
       mapContentHtml =
         '<div class="vec-map-stage">' +
-          '<svg class="chart vec-map-svg" viewBox="0 0 ' + P.w + ' ' + P.h + '">' + paths + labelsSvg + '</svg>' +
+          '<div style="text-align:center;margin-bottom:6px">' +
+            '<div style="font-size:12px;font-weight:800;color:var(--ink);line-height:1.25">Peta Klaster Struktur Ekonomi Kabupaten/Kota Indonesia</div>' +
+            '<div style="font-size:10.5px;font-weight:700;color:var(--muted)">Semester I 2026 | Agglomerative Ward (K=4) &middot; 514 Wilayah</div>' +
+          '</div>' +
+          '<div class="vec-map-canvas">' +
+            '<svg class="chart vec-map-svg" viewBox="' + vbox + '">' + base514Images + paths + labelsSvg + '</svg>' +
+          '</div>' +
           legendOverlay +
           '<div class="map-sub-bar">' +
-            '<span class="small muted">Ketuk provinsi di peta untuk inspeksi detail</span>' +
-            '<button type="button" class="btn sec sm" id="switch-to-514">' + icon('map') + 'Peta 514 Kab/Kota</button>' +
+            '<span class="small muted">Ketuk wilayah di peta untuk rincian kabupaten/kota</span>' +
+            '<button type="button" class="btn sec sm" id="switch-to-514">' + icon('zoomIn') + 'Gambar Penuh</button>' +
           '</div>' +
         '</div>';
     }
@@ -478,32 +566,49 @@
     activeKabs.forEach(function (kb) { cCounts[kb.klaster] = (cCounts[kb.klaster] || 0) + 1; });
     var totActive = Math.max(1, activeKabs.length);
 
+    var provKabsPreview = '';
+    if (selProv) {
+      provKabsPreview =
+        '<div class="mt8">' +
+          '<div class="card-tag">DAFTAR ' + selProv.kabs.length + ' KABUPATEN/KOTA DI ' + esc(selProv.nama.toUpperCase()) + '</div>' +
+          '<div class="mi-kab-list mt4" style="max-height:175px">' +
+            selProv.kabs.map(function (kb) {
+              return '<div class="mi-kab-row">' +
+                '<span><b>' + esc(kb.nama) + '</b></span>' +
+                '<span class="kl-pill k' + kb.klaster + '">Klaster ' + kb.klaster + '</span>' +
+              '</div>';
+            }).join('') +
+          '</div>' +
+        '</div>';
+    }
+
     var sidePanelHtml =
       '<div class="map-inspector mt8">' +
         '<div class="mi-head">' +
-          '<span class="card-tag">' + (selProv ? 'PROVINSI TERPILIH &middot; ' + esc(selProv.pulau.toUpperCase()) : (kState.pulau !== 'all' ? 'AGREGAT KEPULAUAN' : 'AGREGAT NASIONAL 38 PROVINSI')) + '</span>' +
-          '<h4>' + (selProv ? esc(selProv.nama) : (kState.pulau !== 'all' ? 'Kepulauan ' + esc(kState.pulau) : 'Seluruh Wilayah Indonesia')) + '</h4>' +
+          '<span class="card-tag">' + (selProv ? 'INSPEKSI PROVINSI &middot; ' + esc(selProv.pulau.toUpperCase()) : (kState.pulau !== 'all' ? 'AGREGAT KEPULAUAN' : 'AGREGAT NASIONAL 514 KABUPATEN/KOTA')) + '</span>' +
+          '<h4>' + (selProv ? esc(selProv.nama) + ' (' + selProv.nKab + ' Kab/Kota)' : (kState.pulau !== 'all' ? 'Kepulauan ' + esc(kState.pulau) : 'Seluruh Wilayah Indonesia (38 Provinsi)')) + '</h4>' +
         '</div>' +
         (selProv ?
           '<div class="grid2 mt8">' +
-            '<div class="mini-k"><b class="num">Rp' + idn(selProv.pdrbKapita / 1000, 2) + ' Jt</b><span>PDRB / Kapita</span></div>' +
-            '<div class="mini-k"><b class="num">' + (selProv.pertumbuhan > 0 ? '+' : '') + idn(selProv.pertumbuhan, 2) + '%</b><span>Pertumbuhan Riil</span></div>' +
+            '<div class="mini-k"><b class="num">Rp' + idn(selProv.pdrbKapita / 1000, 2) + ' Jt</b><span>PDRB / Kapita ADHB</span></div>' +
+            '<div class="mini-k"><b class="num">' + (selProv.pertumbuhan > 0 ? '+' : '') + idn(selProv.pertumbuhan, 2) + '%</b><span>Pertumbuhan PDRB Riil</span></div>' +
           '</div>' :
           '<div class="grid2 mt8">' +
-            '<div class="mini-k"><b class="num">' + activeKabs.length + '</b><span>Kabupaten / Kota</span></div>' +
-            '<div class="mini-k"><b class="num">' + (kState.pulau === 'all' ? 38 : provs.filter(function (p) { return p.pulau === kState.pulau; }).length) + '</b><span>Provinsi</span></div>' +
+            '<div class="mini-k"><b class="num">' + activeKabs.length + ' Wilayah</b><span>Total Kabupaten / Kota</span></div>' +
+            '<div class="mini-k"><b class="num">' + (kState.pulau === 'all' ? 38 : provs.filter(function (p) { return p.pulau === kState.pulau; }).length) + ' Provinsi</b><span>Cakupan Administratif</span></div>' +
           '</div>') +
         '<div class="mt8">' +
-          '<div class="card-tag">DISTRIBUSI KLASTER (' + activeKabs.length + ' KAB/KOTA)</div>' +
+          '<div class="card-tag">KOMPOSISI KLASTER (' + activeKabs.length + ' KABUPATEN/KOTA)</div>' +
           [1, 2, 3, 4].map(function (cid) {
             var pr = SP.profById[cid];
             var n = cCounts[cid] || 0, pct = (n / totActive * 100);
             return '<div class="sb-row">' +
-              '<div class="sb-head"><span class="sb-label"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:' + pr.warna + ';margin-right:5px"></i>K' + cid + ' · ' + esc(pr.nama) + '</span><span class="sb-val num">' + n + ' (' + idn(pct, 1) + '%)</span></div>' +
+              '<div class="sb-head"><span class="sb-label"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:' + pr.warna + ';margin-right:6px"></i>K' + cid + ' · ' + esc(pr.nama) + '</span><span class="sb-val num">' + n + ' (' + idn(pct, 2) + '%)</span></div>' +
               '<div class="sb-track"><div class="sb-fill" style="width:' + pct + '%;background:' + pr.warna + '"></div></div>' +
             '</div>';
           }).join('') +
         '</div>' +
+        provKabsPreview +
       '</div>';
 
     box.innerHTML = mapContentHtml + sidePanelHtml;
@@ -526,7 +631,7 @@
       renderKlasterStage();
     };
     var zIn = box.querySelector('#z-in');
-    if (zIn) zIn.onclick = function () { kState.zoom514 = Math.min(220, kState.zoom514 + 30); renderKlasterStage(); };
+    if (zIn) zIn.onclick = function () { kState.zoom514 = Math.min(250, kState.zoom514 + 30); renderKlasterStage(); };
     var zOut = box.querySelector('#z-out');
     if (zOut) zOut.onclick = function () { kState.zoom514 = Math.max(100, kState.zoom514 - 30); renderKlasterStage(); };
     var zBack = box.querySelector('#z-back-vec');
@@ -565,6 +670,12 @@
       (filtered.length > 60 ? '<p class="hint mt8">Menampilkan 60 dari ' + filtered.length + ' wilayah. Gunakan pencarian di atas untuk mencari kabupaten/kota spesifik.</p>' : '');
   }
 
+  function syncClusterChips() {
+    var app = A.app;
+    app.querySelectorAll('[data-kchip]').forEach(function (x) { x.classList.toggle('on', x.dataset.kchip === String(kState.klaster)); });
+    app.querySelectorAll('[data-mchip]').forEach(function (x) { x.classList.toggle('on', x.dataset.mchip === String(kState.klaster)); });
+  }
+
   function bindKlasterEvents() {
     renderKlasterStage();
     renderKab514Table();
@@ -577,25 +688,37 @@
     if (prsel) prsel.onchange = function () { kState.provIdx = +prsel.value; renderKlasterStage(); renderKab514Table(); };
     var lblBtn = app.querySelector('#km-lbl-btn');
     if (lblBtn) lblBtn.onclick = function () { kState.showLabels = !kState.showLabels; lblBtn.classList.toggle('on', kState.showLabels); renderKlasterStage(); };
+    var zmBtn = app.querySelector('#km-zoom-btn');
+    if (zmBtn) zmBtn.onclick = function () { kState.autoZoom = !kState.autoZoom; zmBtn.classList.toggle('on', kState.autoZoom); renderKlasterStage(); };
     var rstBtn = app.querySelector('#km-reset-btn');
-    if (rstBtn) rstBtn.onclick = function () { kState.layer = 'klaster'; kState.pulau = 'all'; kState.provIdx = -1; kState.klaster = 'all'; kState.search = ''; kState.showLabels = false; viewBukti('klaster'); };
+    if (rstBtn) rstBtn.onclick = function () { kState.layer = 'klaster'; kState.pulau = 'all'; kState.provIdx = -1; kState.klaster = 'all'; kState.search = ''; kState.showLabels = false; kState.autoZoom = true; viewBukti('klaster'); };
 
     var kq = app.querySelector('#kab514-q');
     if (kq) kq.oninput = function () { kState.search = kq.value; renderKab514Table(); };
     app.querySelectorAll('[data-kchip]').forEach(function (b) {
       b.onclick = function () {
         kState.klaster = b.dataset.kchip;
-        app.querySelectorAll('[data-kchip]').forEach(function (x) { x.classList.toggle('on', x.dataset.kchip === kState.klaster); });
+        syncClusterChips();
+        renderKlasterStage();
+        renderKab514Table();
+      };
+    });
+    app.querySelectorAll('[data-mchip]').forEach(function (b) {
+      b.onclick = function () {
+        kState.klaster = b.dataset.mchip;
+        syncClusterChips();
+        renderKlasterStage();
         renderKab514Table();
       };
     });
     app.querySelectorAll('[data-filter-kl]').forEach(function (b) {
       b.onclick = function () {
         kState.klaster = b.dataset.filterKl;
-        app.querySelectorAll('[data-kchip]').forEach(function (x) { x.classList.toggle('on', x.dataset.kchip === kState.klaster); });
+        syncClusterChips();
+        renderKlasterStage();
         renderKab514Table();
-        var exp = app.querySelector('#kab514-explorer');
-        if (exp && exp.scrollIntoView) exp.scrollIntoView({ behavior: 'smooth' });
+        var stg = app.querySelector('#klaster-Interactive-Stage');
+        if (stg && stg.scrollIntoView) stg.scrollIntoView({ behavior: 'smooth' });
       };
     });
   }

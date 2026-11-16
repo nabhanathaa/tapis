@@ -141,14 +141,14 @@
     var demoBanner =
       '<div class="demo-strip">' +
         icon('info') +
-        '<div><b>DATA RESMI &amp; SIMULASI.</b> Angka makro dari BI, PPATK &amp; BPS; 100 merchant mikro terkalibrasi. <a href="#/menu">Ganti peran di Akun</a>.</div>' +
+        '<div><b>DATA RESMI &amp; SIMULASI.</b> Angka nasional dari BI, PPATK, dan BPS; 100 merchant di bawah adalah simulasi terkalibrasi. <a href="#/menu">Ganti peran di Akun</a>.</div>' +
       '</div>';
 
     // 2. Hero Card (seperti kartu hijau "SETORAN HARI INI" di Pilahin, bertema Navy-Blue-Gold BI)
     var heroEyebrow = isPJP() ? 'ANTREAN VERIFIKASI HARI INI &middot; PJP ARUNIKA' :
       (u.role === 'bi' ? 'SUPERVISI SISTEM PEMBAYARAN &middot; BANK INDONESIA' : 'INTELIJEN KEUANGAN &middot; PPATK');
     var heroBigVal = isPJP() ? (cu(q.length) + ' <span>merchant</span>') :
-      (u.role === 'bi' ? (cu(H.qris.merchant_juta, 2) + ' <span>juta UMKM QRIS</span>') : (cu(cs.filter(function (c) { return c.status === 'Diteruskan'; }).length) + ' <span>LTKM masuk</span>'));
+      (u.role === 'bi' ? (cu(H.qris.merchant_juta, 2) + ' <span>juta UMKM</span>') : (cu(cs.filter(function (c) { return c.status === 'Diteruskan'; }).length) + ' <span>LTKM masuk</span>'));
     var ctaHref = isPJP() ? '#/antrean' : (u.role === 'bi' ? '#/pengawasan' : '#/ltkm');
     var ctaText = isPJP() ? 'Mulai verifikasi antrean' : (u.role === 'bi' ? 'Buka pengawasan PJP' : 'Tinjau laporan LTKM');
 
@@ -157,9 +157,9 @@
         '<div class="hello-eyebrow">' + heroEyebrow + '</div>' +
         '<div class="hello-big num">' + heroBigVal + '</div>' +
         '<div class="hello-kpis">' +
-          '<div class="hk-box"><span>KUOTA HARI INI</span><b class="num">' + today + '/' + K + '</b></div>' +
-          '<div class="hk-box"><span>KASUS AKTIF</span><b class="num">' + open.length + ' berkas</b></div>' +
-          '<div class="hk-box"><span>UMKM PULIH</span><b class="num">' + cleared + ' toko</b></div>' +
+          '<div class="hk-box"><span>JADWAL HARI INI</span><b class="num">' + today + ' / ' + K + '</b></div>' +
+          '<div class="hk-box"><span>KASUS AKTIF</span><b class="num">' + open.length + '</b></div>' +
+          '<div class="hk-box"><span>UMKM PULIH</span><b class="num">' + cleared + '</b></div>' +
         '</div>' +
         '<a class="hello-cta" href="' + ctaHref + '">' +
           icon('scale') +
@@ -176,7 +176,7 @@
             '<div class="act-ic">' + icon('file') + '</div>' +
             '<div class="act-body">' +
               '<b>' + kebCases.length + ' pengajuan keberatan merchant baru</b>' +
-              '<span>Tinjau lampiran NIB &amp; nota stok agar UMKM mendapat kepastian</span>' +
+              '<span>Tinjau dokumen NIB &amp; nota stok agar usaha segera dipulihkan</span>' +
             '</div>' +
             icon('chev', 'act-chev') +
           '</a>' : '') +
@@ -184,8 +184,8 @@
           '<a class="act-card act-gold" href="#/kasus/' + batCases[0].id + '">' +
             '<div class="act-ic">' + icon('clock') + '</div>' +
             '<div class="act-body">' +
-              '<b>' + batCases.length + ' penundaan aktif (' + minBat + ' hari kerja tersisa)</b>' +
-              '<span>Setujui pencabutan atau teruskan LTKM sesuai SLA UU 8/2010 Ps. 26</span>' +
+              '<b>' + batCases.length + ' penundaan aktif (sisa ' + minBat + ' hari kerja)</b>' +
+              '<span>Cabut pembatasan atau kirim LTKM sesuai batas UU 8/2010 Ps. 26</span>' +
             '</div>' +
             icon('chev', 'act-chev') +
           '</a>' : '') +
@@ -193,8 +193,8 @@
           '<a class="act-card act-orange" href="#/merchant/' + q[0].m.id + '">' +
             '<div class="act-ic">' + icon('queue') + '</div>' +
             '<div class="act-body">' +
-              '<b>Prioritas #1: ' + esc(q[0].m.nama) + ' (Skor ' + q[0].m.score + ')</b>' +
-              '<span>' + esc(q[0].m.kota) + ' &middot; Konvergensi ' + q[0].m.nGroups + ' dari 3 pilar sinyal kuat</span>' +
+              '<b>Prioritas #1: ' + esc(q[0].m.nama) + '</b>' +
+              '<span>Skor ' + q[0].m.score + ' &middot; ' + esc(q[0].m.kota) + ' &middot; ' + q[0].m.nGroups + ' dari 3 pilar sinyal aktif</span>' +
             '</div>' +
             icon('chev', 'act-chev') +
           '</a>' : '') +
@@ -212,7 +212,7 @@
           '<span>Jejaring</span>' +
         '</a>' +
         '<a class="qtile" href="#/simulator/risiko">' +
-          '<div class="qt-ic qt-gold">' + icon('sliders') + '</div>' +
+          '<div class="qt-ic qt-gold"><span class="qt-badge">2</span>' + icon('sliders') + '</div>' +
           '<span>Simulasi</span>' +
         '</a>' +
         '<a class="qtile" href="#/menu">' +

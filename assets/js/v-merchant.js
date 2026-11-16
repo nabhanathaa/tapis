@@ -16,13 +16,13 @@
     var pillCls = x.today ? 'st-menunggu' : 'st-investigasi';
     return '<a class="q-mcard" href="#/merchant/' + m.id + '">' +
       '<div class="qm-top">' +
-        '<span class="' + rankClass + '">Prioritas #' + x.rank + '</span>' +
+        '<span class="' + rankClass + '">Prioritas #' + x.rank + ' &middot; ' + m.id + '</span>' +
         '<span class="pill ' + pillCls + '">' + x.status + ' &middot; ' + hariLabel + '</span>' +
       '</div>' +
       '<div class="qm-main">' +
         '<div class="thumb">' + U.storefront(m, 44) + '</div>' +
         '<div class="qm-info">' +
-          '<b>' + esc(m.nama) + ' <span class="mono-id">' + m.id + '</span></b>' +
+          '<b>' + esc(m.nama) + '</b>' +
           '<span>' + esc(m.kategori) + ' &middot; ' + esc(m.kota) + ' (K' + m.klaster + ')</span>' +
           '<div class="qm-tags">' +
             '<span class="typo-pill">' + esc(U.tagLabel(m.tag)) + '</span>' +
