@@ -14,7 +14,7 @@
   var DAYS = 56, BASE = 28, RECENT = 14, FIRST_RECENT = DAYS - RECENT;
   var END = new Date(2026, 10, 6);                        // hari terakhir data simulasi: 6 Nov 2026
   var START = new Date(END.getTime() - (DAYS - 1) * 864e5);
-  var CITIES = ['Surabaya', 'Sidoarjo', 'Malang', 'Yogyakarta', 'Semarang', 'Bandung', 'Jakarta Timur', 'Depok', 'Makassar', 'Medan'];
+  var CITIES = ['Surabaya', 'Sidoarjo', 'Bojonegoro', 'Yogyakarta', 'Semarang', 'Bandung', 'Jakarta Timur', 'Depok', 'Keerom', 'Medan', 'Makassar', 'Malang'];
   var PJP = ['PJP Arunika', 'PJP Seroja Digital', 'PJP Lintas Bayar'];
   var CATS = {
     'Warung kelontong': { tick: 32000, lam: 26, hours: 'day', mcc: '5411', buka: [7, 21] },
@@ -107,9 +107,14 @@
 
   function make(cat, name, tag, group, idx) {
     var c = CATS[cat], lam = c.lam * (0.75 + 0.5 * rnd());
+    var cCity = CITIES[(idx * 3 + name.length) % CITIES.length];
+    var kMap = (root.RESMI && root.RESMI.klaster && root.RESMI.klaster.kota_klaster) || {};
+    var cId = kMap[cCity] || kMap['Kota ' + cCity] || kMap['Kabupaten ' + cCity] || 4;
+    var cProf = (root.RESMI && root.RESMI.klaster && root.RESMI.klaster.profil) ? root.RESMI.klaster.profil.find(function (p) { return p.id === cId; }) : null;
     var m = {
       id: 'M' + String(merchants.length + 1).padStart(3, '0'), nama: name, kategori: cat, mcc: c.mcc, tag: tag, kelompok: group,
-      kota: CITIES[(idx * 3 + name.length) % CITIES.length], nmid: nmid(), pjp: PJP[merchants.length % 3], pemilik: pick(OWNERS),
+      kota: cCity, klaster: cId, klasterNama: cProf ? cProf.nama : ('Klaster ' + cId), klasterSektor: cProf ? cProf.sektor_dominan : '', klasterWarna: cProf ? cProf.warna : '#3B82F6',
+      nmid: nmid(), pjp: PJP[merchants.length % 3], pemilik: pick(OWNERS),
       umur: ri(240, 2200), usaha: 'Usaha mikro', dokumenUsaha: 'lengkap', jamBuka: c.buka, hoursKind: c.hours,
       tickBase: Math.round(c.tick * (0.8 + 0.4 * rnd()) / 500) * 500, uniformBase: 0.12 + 0.16 * rnd(), failRate: 0.02 + 0.03 * rnd(),
       catatanSimulasi: NOTES[tag] || '', sumberData: 'SIMULASI'

@@ -7,21 +7,21 @@
   function bln(s) { return A.bln(s); }
   function viewBukti(tab) {
     bTab = tab || bTab;
-    var tabs = [['ringkas', 'Ringkasan'], ['m1', 'Deposit'], ['m2', 'Laporan'], ['m3', 'Simulasi Risiko'], ['peta', 'Peta']].map(function (t) { return '<button class="' + (bTab === t[0] ? 'on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('');
-    var body = '<div class="tabs">' + tabs + '</div>' + ({ ringkas: bRingkas, m1: bM1, m2: bM2, m3: bM3, peta: bPeta }[bTab] || bRingkas)();
+    if (bTab === 'peta') bTab = 'klaster';
+    var tabs = [['ringkas', 'Ringkasan'], ['m1', 'Deposit'], ['m2', 'Laporan'], ['m3', 'Simulasi Risiko'], ['klaster', 'Klaster Wilayah']].map(function (t) { return '<button class="' + (bTab === t[0] ? 'on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('');
+    var body = '<div class="tabs">' + tabs + '</div>' + ({ ringkas: bRingkas, m1: bM1, m2: bM2, m3: bM3, klaster: bKlaster }[bTab] || bRingkas)();
     shell('Pusat bukti', 'Angka resmi PPATK, Bank Indonesia, dan BPS', body, { nav: 'bukti' });
     A.app.querySelectorAll('[data-t]').forEach(function (b) { b.onclick = function () { location.hash = '#/bukti/' + b.dataset.t; }; });
-    if (bTab === 'peta') bindPeta();
   }
   function bRingkas() {
     var d = H.deposit, m = H.m2, m3 = H.m3;
     return '<div class="grid2">' + A.stat('Merchant QRIS (96,68% UMKM)', cu(H.qris.merchant_juta, 2, '', ' juta'), 'resmi', 'BI 2026') + A.stat('Transaksi QRIS Sem I 2026', cu(H.qris.volume_miliar, 2, '', ' miliar'), 'resmi', 'BI 2026') +
       A.stat('Frekuensi deposit judi daring lewat QRIS', cu(87.66, 2, '', '%'), 'resmi', 'PPATK 2026') + A.stat('Rata-rata deposit lewat QRIS', cu(Math.round(d.rata2_qris_rp), 0, 'Rp'), 'hitungan', 'dari PPATK 2026') + '</div>' +
-      '<div class="card mt12"><div class="card-tag">SINTESIS EVIDENCE-BASED</div><h3>Tiga Temuan Kunci dari Data Resmi</h3>' +
-      '<div class="reason"><span class="ic on">1</span><div><b>Deposit makin kecil dan makin sering (M1)</b><p>Frekuensi naik ' + idn((d.frek_sem1_2026_juta / d.frek_sem1_2025_juta - 1) * 100, 1) + '%, rata-rata turun ' + idn((1 - d.rata2_2026_rp / d.rata2_2025_rp) * 100, 1) + '%. Deposit QRIS rata-rata ' + rp(d.rata2_qris_rp) + ', di bawah rata-rata transaksi QRIS ' + rp(H.qris.rata2_transaksi_rp) + '.</p></div></div>' +
-      '<div class="reason"><span class="ic on">2</span><div><b>Laporan indikasi Perjudian menurun (M2)</b><p>Mann-Kendall dengan koreksi ties Z = ' + idn(m.mk_Z_ties, 2) + ' (p = ' + idn(m.mk_p_ties, 4) + '); setelah prewhitening TFPW Z = ' + idn(m.mk_tfpw_Z, 2) + ' (p = ' + idn(m.mk_tfpw_p, 4) + '). Titik patah BIC: ' + m.patah_bic.map(bln).join(' dan ') + ' (eksploratif).</p></div></div>' +
-      '<div class="reason"><span class="ic on">3</span><div><b>Risiko kesalahan penapisan perlu ditekan (M3)</b><p>Pada skenario prevalensi proksi ' + idn(m3.prevalensi_proxy_persen, 4) + '% dan kemampuan menemukan merchant bermasalah 80% (asumsi), ketepatan 50% hanya tercapai bila risiko salah menandai paling tinggi ' + idn(m3.fpr_maks_ppv50_skenario_proxy_persen, 4) + '%. Karena itu TAPIS menuntut dua kelompok sinyal dan pemeriksaan manusia.</p></div></div></div>' +
-      '<p class="warnnote">Semua angka di halaman ini berasal dari data nasional agregat. Data tersebut tidak mengukur kinerja deteksi merchant dan tidak menunjukkan kapasitas pemeriksaan.</p>';
+      '<div class="card mt12"><div class="card-tag">SINTESIS TEMUAN</div><h3>Tiga Temuan Kunci dari Data Resmi</h3>' +
+      '<div class="reason"><span class="ic on">1</span><div><b>Deposit lebih sering, nominal lebih kecil (M1)</b><p>Frekuensi naik ' + idn((d.frek_sem1_2026_juta / d.frek_sem1_2025_juta - 1) * 100, 1) + '%, rata-rata nominal turun ' + idn((1 - d.rata2_2026_rp / d.rata2_2025_rp) * 100, 1) + '%. Rata-rata deposit QRIS (' + rp(d.rata2_qris_rp) + ') lebih rendah daripada rata-rata transaksi QRIS (' + rp(H.qris.rata2_transaksi_rp) + ').</p></div></div>' +
+      '<div class="reason"><span class="ic on">2</span><div><b>Laporan indikasi perjudian menurun (M2)</b><p>Tren menurun signifikan (Mann-Kendall Z = ' + idn(m.mk_Z_ties, 2) + '; p = ' + idn(m.mk_p_ties, 4) + '; TFPW Z = ' + idn(m.mk_tfpw_Z, 2) + '; p = ' + idn(m.mk_tfpw_p, 4) + '). Titik patah BIC (' + m.patah_bic.map(bln).join(' dan ') + ') bersifat eksploratif.</p></div></div>' +
+      '<div class="reason"><span class="ic on">3</span><div><b>Risiko salah menandai perlu ditekan (M3)</b><p>Pada prevalensi proksi ' + idn(m3.prevalensi_proxy_persen, 4) + '% dan sensitivitas 80%, ketepatan 50% mensyaratkan FPR maksimum ' + idn(m3.fpr_maks_ppv50_skenario_proxy_persen, 4) + '%. TAPIS menekannya dengan syarat minimal dua kelompok sinyal dan audit analis.</p></div></div></div>' +
+      '<p class="warnnote">Data agregat nasional, bukan tolok ukur kapasitas pemeriksa.</p>';
   }
   function bM1() {
     var dep = R.deposit.filter(function (r) { return r.kanal === 'Semua kanal'; });
@@ -30,11 +30,11 @@
     function hb(lab, v, col) { var w = Math.abs(v) / mx * 130; return '<div style="display:flex;align-items:center;gap:8px;margin:8px 0"><span style="width:92px;font-size:11.5px">' + lab + '</span><div style="flex:1;position:relative;height:22px"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#CBD5E1"></div><div class="hbar' + (v < 0 ? ' neg' : '') + '" style="position:absolute;top:2px;height:18px;border-radius:5px;background:' + col + ';' + (v >= 0 ? 'left:50%' : 'right:50%') + ';width:' + (Math.abs(v) / mx * 48) + '%"></div></div><b class="num" style="width:74px;text-align:right;font-size:12px">' + (v < 0 ? '-' : '+') + 'Rp' + idn(Math.abs(v), 2) + ' T</b></div>'; }
     var cmp = [{ l: 'Deposit QRIS', v: d.rata2_qris_rp, c: '#E0413A', t: rp(d.rata2_qris_rp) }, { l: 'Transaksi QRIS', v: H.qris.rata2_transaksi_rp, c: '#1E5BD8', t: rp(H.qris.rata2_transaksi_rp) }, { l: 'Batas MDR 0%', v: 100000, c: '#CBD5E1', t: 'Rp100.000' }];
     return '<div class="card"><div class="flex between"><div><div class="card-tag">DATA AGREGAT NASIONAL</div><h3>Nilai Deposit Judi Daring</h3></div>' + badge('resmi') + '</div>' + U.bars(yr) + A.src('PPATK, Laporan Semester I 2026, hal. 29.') + '</div>' +
-      '<div class="card"><div class="flex between"><div><div class="card-tag">METODE DEKOMPOSISI KITAGAWA (1955)</div><h3>Dekomposisi Perubahan Nilai</h3></div>' + badge('hitungan') + '</div><p class="hint">Sem I 2025 ke Sem I 2026: nilai naik ' + idn((Math.exp(d.log_total) - 1) * 100, 1) + '%.</p>' +
+      '<div class="card"><div class="flex between"><div><div class="card-tag">DEKOMPOSISI KITAGAWA (1955)</div><h3>Dekomposisi Perubahan Nilai</h3></div>' + badge('hitungan') + '</div><p class="hint">Sem I 2025 ke Sem I 2026: nilai naik ' + idn((Math.exp(d.log_total) - 1) * 100, 1) + '%.</p>' +
       hb('Efek frekuensi', d.efek_frek_T, '#1E5BD8') + hb('Efek rata-rata', d.efek_rata2_T, '#E0413A') + hb('Perubahan total', d.efek_frek_T + d.efek_rata2_T, '#0B2A5B') +
-      '<p class="note">Kenaikan frekuensi hampir seluruhnya dihapus oleh turunnya nominal per transaksi. Pola ini sesuai dengan modus "nominal kecil, berulang, dan tersebar" yang disebut PPATK.</p>' + A.src('PPATK, Siaran Pers B/04/HM.05/3.1/VIII/2026; dekomposisi Kitagawa (1955).') + '</div>' +
-      '<div class="card"><div class="flex between"><div><div class="card-tag">KOMPARASI BELANJA VS JUDI</div><h3>Nominal Tidak Dapat Menjadi Pembeda Tunggal</h3></div>' + badge('hitungan') + '</div>' + U.bars(cmp, { max: 115000 }) +
-      '<p class="note">Rata-rata deposit lewat QRIS lebih kecil daripada rata-rata belanja QRIS dan berada di bawah batas MDR 0% yang berlaku 1 Oktober 2026. Aturan berbasis nominal justru akan menandai warung.</p>' + A.src('PPATK 2026; BI, Siaran Pers 28/159/DKom; diolah.') + '</div>';
+      '<p class="note">Kenaikan frekuensi hampir seluruhnya diimbangi turunnya nominal per transaksi, sesuai pola "nominal kecil, berulang, dan tersebar" menurut PPATK.</p>' + A.src('PPATK, Siaran Pers B/04/HM.05/3.1/VIII/2026; dekomposisi Kitagawa (1955).') + '</div>' +
+      '<div class="card"><div class="flex between"><div><div class="card-tag">PERBANDINGAN BELANJA DAN JUDI</div><h3>Nominal Bukan Pembeda Tunggal</h3></div>' + badge('hitungan') + '</div>' + U.bars(cmp, { max: 115000 }) +
+      '<p class="note">Deposit QRIS rata-rata lebih kecil daripada transaksi QRIS dan di bawah batas MDR 0% (berlaku 1 Oktober 2026), sehingga aturan berbasis nominal berisiko menandai warung secara keliru.</p>' + A.src('PPATK 2026; BI, Siaran Pers 28/159/DKom; diolah.') + '</div>';
   }
   function bM2() {
     var m = H.m2, s = m.deret, W = 340, Hh = 190, L = 40, Rr = 6, Tt = 12, B = 24, n = s.length, mx = 22000;
@@ -55,10 +55,10 @@
     var cchart = '<svg class="chart" viewBox="0 0 ' + cW + ' ' + cH + '">' + cyt + '<line x1="30" x2="' + (cW - 10) + '" y1="' + cY(hLim) + '" y2="' + cY(hLim) + '" stroke="#E0413A" stroke-dasharray="4 3"/><text x="' + (cW - 12) + '" y="' + (cY(hLim) - 4) + '" font-size="8.5" text-anchor="end" fill="#E0413A">batas ilustratif h = 4</text><line x1="30" x2="' + (cW - 10) + '" y1="' + cY(0) + '" y2="' + cY(0) + '" stroke="#E8EEF7"/><path class="ln" pathLength="1" d="' + cline + '" fill="none" stroke="#1E5BD8" stroke-width="2.2"/>' + cdots + '</svg>';
     var pel = R.pelapor.map(function (r) { return '<tr><td>' + esc(r.kelompok_pelapor.replace('Penyelenggara e-money dan/atau e-wallet', 'Penyelenggara e-money/e-wallet')) + '</td><td class="r num">' + idn(r['2024_jan_sep']) + '</td><td class="r num">' + idn(r['2025_jan_sep']) + '</td><td class="r num">' + idn(r['2026_jan_sep']) + '</td></tr>'; }).join('');
     var em = R.pelapor.filter(function (r) { return /e-money/.test(r.kelompok_pelapor); })[0];
-    return '<div class="card"><div class="flex between"><div><div class="card-tag">TREN DERET WAKTU LTKM</div><h3>Indikasi Perjudian per Bulan</h3></div>' + badge('resmi') + '</div><p class="hint">Batang = jumlah laporan, garis = rata-rata geometrik segmen, pita = CI 95% (HAC), garis putus = awal segmen baru menurut BIC.</p>' + chart + A.src('PPATK, Buletin Statistik APUPPT edisi Juni 2025, Oktober 2025, dan September 2026, Tabel 5; diolah.') + '</div>' +
+    return '<div class="card"><div class="flex between"><div><div class="card-tag">TREN DERET WAKTU LTKM</div><h3>Indikasi Perjudian per Bulan</h3></div>' + badge('resmi') + '</div><p class="hint">Batang: jumlah laporan. Garis: rata-rata geometrik segmen. Pita: CI 95% (HAC). Garis putus: awal segmen baru menurut BIC.</p>' + chart + A.src('PPATK, Buletin Statistik APUPPT edisi Juni 2025, Oktober 2025, dan September 2026, Tabel 5; diolah.') + '</div>' +
       '<div class="card"><div class="flex between"><div><div class="card-tag">UJI HIPOTESIS STATISTIK</div><h3>Hasil Uji Tren dan Titik Patah</h3></div>' + badge('hitungan') + '</div><table class="mini mt8"><tbody>' +
       '<tr><td>Mann-Kendall, koreksi ties</td><td class="r num">Z = ' + idn(m.mk_Z_ties, 3) + '; p = ' + idn(m.mk_p_ties, 4) + '</td></tr>' +
-      '<tr><td><b>Mann-Kendall TFPW</b> (prewhitening, uji utama bila ada autokorelasi)</td><td class="r num"><b>Z = ' + idn(m.mk_tfpw_Z, 3) + '; p = ' + idn(m.mk_tfpw_p, 4) + '</b></td></tr>' +
+      '<tr><td><b>Mann-Kendall TFPW</b> (uji utama bila ada autokorelasi)</td><td class="r num"><b>Z = ' + idn(m.mk_tfpw_Z, 3) + '; p = ' + idn(m.mk_tfpw_p, 4) + '</b></td></tr>' +
       '<tr><td>Autokorelasi untuk TFPW</td><td class="r num">rho = ' + idn(m.rho_tfpw, 3) + '</td></tr>' +
       '<tr><td>Kemiringan Sen</td><td class="r num">' + idn(m.sen_persen_per_bulan, 2) + '% per bulan</td></tr>' +
       '<tr><td>OLS-CUSUM</td><td class="r num">' + idn(m.cusum_ols_stat, 3) + '; p = ' + idn(m.cusum_ols_p, 4) + '</td></tr>' +
@@ -67,10 +67,10 @@
       '<tr><td>p bootstrap sup-F, AR(1) di bawah H0 (rho = ' + idn(m.rho_ar1_null, 3) + ')</td><td class="r num">' + idn(m.supF_p_ar1_null, 4) + '</td></tr>' +
       '<tr><td>Titik patah BIC</td><td class="r num">' + m.patah_bic.map(bln).join(', ') + '</td></tr>' +
       '<tr><td>Jan-Sep 2025 dan 2026</td><td class="r num">' + idn(m.jan_sep_2025) + ' dan ' + idn(m.jan_sep_2026) + '</td></tr></tbody></table>' +
-      '<p class="warnnote">Bukti tren menurun kuat, tetapi bukti patahan tunggal pada Desember 2024 tidak tahan terhadap bootstrap AR(1) di bawah H0 (p = ' + idn(m.supF_p_ar1_null, 2) + '). Titik patah BIC bersifat eksploratif, dipilih dari data yang sama, dan sensitif terhadap spesifikasi serta periode awal. Penurunan laporan tidak menilai kinerja lembaga dan tidak diuji sebagai akibat kebijakan tertentu; jumlah LTKM bukan jumlah pelaku dan bukan kapasitas pemeriksaan.</p></div>' +
-      '<div class="card"><div class="flex between"><div><div class="card-tag">DETEKSI PERUBAHAN CUSUM</div><h3>CUSUM Bawah 2026 terhadap Acuan 2025</h3></div>' + badge('hitungan') + '</div><p class="hint">Alarm pertama: ' + bln(m.cusum_alarm_pertama) + '. Parameter k = 0,5 dan h = 4 bersifat <b>ilustratif</b> dan belum dikalibrasi dengan data berlabel. Alat serupa (CUSUM atas, k = ' + T.CONFIG.cusum.k + ', h = ' + T.CONFIG.cusum.h + ') dipakai TAPIS untuk tiap merchant dengan parameter yang juga belum dikalibrasi.</p>' + cchart + A.src('PPATK, Buletin APUPPT September 2026; CUSUM Page (1954).') + '</div>' +
-      '<div class="card"><div class="flex between"><div><div class="card-tag">DATA PELAPORAN NASIONAL</div><h3>LTKM per Kelompok Pelapor, Jan-Sep</h3></div>' + badge('resmi') + '</div><p class="hint">LTKM = Laporan Transaksi Keuangan Mencurigakan yang diterima PPATK (seluruh jenis tindak pidana).</p><table class="mini mt8"><thead><tr><th>Pelapor</th><th class="r">2024</th><th class="r">2025</th><th class="r">2026</th></tr></thead><tbody>' + pel + '</tbody></table>' +
-      (em ? '<p class="note">Laporan penyelenggara e-money/e-wallet turun ' + idn((1 - em['2026_jan_sep'] / em['2024_jan_sep']) * 100, 1) + '% antara Jan-Sep 2024 dan 2026. Ini statistik nasional, bukan ukuran kapasitas atau kinerja pemeriksa.</p>' : '') + A.src('PPATK, Buletin APUPPT September 2026, Tabel 2.') + '</div>';
+      '<p class="warnnote">Tren menurun kuat, tetapi patahan tunggal Desember 2024 tidak bertahan pada bootstrap AR(1) di bawah H0 (p = ' + idn(m.supF_p_ar1_null, 2) + '). Titik patah BIC bersifat eksploratif. Penurunan LTKM bukan ukuran kinerja lembaga, bukan uji dampak kebijakan, dan bukan jumlah pelaku atau kapasitas pemeriksaan.</p></div>' +
+      '<div class="card"><div class="flex between"><div><div class="card-tag">DETEKSI PERUBAHAN CUSUM</div><h3>CUSUM Bawah 2026 terhadap Acuan 2025</h3></div>' + badge('hitungan') + '</div><p class="hint">Alarm pertama: ' + bln(m.cusum_alarm_pertama) + '. Parameter k = 0,5 dan h = 4 bersifat <b>ilustratif</b>; CUSUM atas per merchant di TAPIS (k = ' + T.CONFIG.cusum.k + ', h = ' + T.CONFIG.cusum.h + ') juga belum dikalibrasi dengan data berlabel.</p>' + cchart + A.src('PPATK, Buletin APUPPT September 2026; CUSUM Page (1954).') + '</div>' +
+      '<div class="card"><div class="flex between"><div><div class="card-tag">DATA PELAPORAN NASIONAL</div><h3>LTKM per Kelompok Pelapor, Jan-Sep</h3></div>' + badge('resmi') + '</div><p class="hint">LTKM: Laporan Transaksi Keuangan Mencurigakan yang diterima PPATK (seluruh jenis tindak pidana).</p><table class="mini mt8"><thead><tr><th>Pelapor</th><th class="r">2024</th><th class="r">2025</th><th class="r">2026</th></tr></thead><tbody>' + pel + '</tbody></table>' +
+      (em ? '<p class="note">Laporan e-money/e-wallet turun ' + idn((1 - em['2026_jan_sep'] / em['2024_jan_sep']) * 100, 1) + '% (Jan-Sep 2024 ke 2026). Ini statistik nasional, bukan ukuran kinerja pemeriksa.</p>' : '') + A.src('PPATK, Buletin APUPPT September 2026, Tabel 2.') + '</div>';
   }
   function ppvCurve(prev, sens, mark) {
     var W = 340, Hh = 170, L = 30, Rr = 8, Tt = 10, B = 26, lo = Math.log10(0.001), hi = Math.log10(2);
@@ -88,23 +88,123 @@
       return '<h4 class="mt12" style="margin:12px 0 4px">' + esc(k) + '</h4><div class="tblwrap"><table class="mini"><thead><tr><th>Risiko salah menandai</th><th class="r">Terindikasi benar</th><th class="r">Salah ditandai</th><th class="r">Ketepatan</th></tr></thead><tbody>' + groups[k].map(function (r) { return '<tr><td class="num">' + idn(r['FPR_%'], 2) + '%</td><td class="r num">' + idn(r.true_positive_ekspektasian) + '</td><td class="r num">' + idn(r.false_positive_ekspektasian) + '</td><td class="r num">' + idn(r['PPV_%'], 1) + '%</td></tr>'; }).join('') + '</tbody></table></div>';
     }).join('');
     var imp = m3.dampak_transaksi_skenario;
-    return '<div class="card"><div class="flex between"><div><div class="card-tag">SIMULASI BERBASIS TEOREMA BAYES</div><h3>Ketepatan Hasil Penapisan</h3></div>' + badge('asumsi') + '</div><p class="hint">Ketepatan menunjukkan perkiraan bagian merchant yang ditandai dan benar-benar bermasalah. Nilainya dipengaruhi oleh kemampuan menemukan kasus, risiko salah menandai, dan perkiraan proporsi merchant bermasalah.</p>' + ppvCurve(m3.prevalensi_proxy_persen, m3.sensitivitas_asumsi) +
+    return '<div class="card"><div class="flex between"><div><div class="card-tag">SIMULASI BERBASIS TEOREMA BAYES</div><h3>Ketepatan Hasil Penapisan</h3></div>' + badge('asumsi') + '</div><p class="hint">Ketepatan: perkiraan proporsi merchant yang ditandai dan benar-benar bermasalah.</p>' + ppvCurve(m3.prevalensi_proxy_persen, m3.sensitivitas_asumsi) +
       '<div class="legend"><span><i style="background:#1E5BD8"></i>Skenario proksi</span><span><i style="background:#CBD5E1"></i>Skenario rendah</span><span><i style="background:#33507F"></i>Skenario tinggi</span><span><i style="background:#F5A524"></i>Garis ketepatan 50%</span></div>' + tbl +
-      '<p class="note">Skenario proksi dihitung dari 5.762 rekening perjudian yang dihentikan sementara (Jan-Jun 2026) dibagi ' + idn(m3.merchant_populasi) + ' merchant. Ini hanya proksi kasar, bukan prevalensi aktual merchant bermasalah, karena satu merchant dapat terkait dengan banyak rekening dan sebaliknya. Pada skenario proksi, risiko salah menandai maksimum untuk mencapai ketepatan 50% adalah ' + idn(m3.fpr_maks_ppv50_skenario_proxy_persen, 4) + '%. Jumlah terindikasi benar dan salah ditandai berlaku untuk satu siklus penapisan seluruh merchant.</p><details class="tech-note"><summary>Dasar perhitungan statistik</summary><p>Nilai Prediktif Positif (PPV) dihitung menggunakan Teorema Bayes: PPV = (Sensitivitas × Prevalensi) / [(Sensitivitas × Prevalensi) + (FPR × (1 − Prevalensi))].</p></details>' + A.src('PPATK, Laporan Semester I 2026, hal. 21; BI 2026; Teorema Bayes; diolah di notebook.') + '</div>' +
-      '<div class="card"><div class="flex between"><div><div class="card-tag">POTENSI DAMPAK TERHADAP UMKM</div><h3>Nilai Transaksi Bruto yang Tertunda</h3></div>' + badge('asumsi') + '</div><p class="hint">Skenario risiko salah menandai 1% dan prevalensi proksi. Nilai ini merupakan transaksi bruto yang berpotensi tertunda pada UMKM yang salah ditandai, bukan omzet hilang atau kerugian aktual. Dana tetap milik merchant dan dapat dicairkan setelah pemeriksaan.</p><table class="mini mt8"><thead><tr><th>Lama</th><th class="r">Transaksi terganggu</th><th class="r">Nilai bruto (Rp miliar)</th></tr></thead><tbody>' + imp.map(function (r) { return '<tr><td>' + r.hari + ' hari</td><td class="r num">' + r['porsi_transaksi_terganggu_%'] + '%</td><td class="r num">' + idn(r.nilai_bruto_tengah_Rp_miliar, 1) + ' <span class="small muted">(' + idn(r.nilai_bruto_min_Rp_miliar, 1) + '-' + idn(r.nilai_bruto_maks_Rp_miliar, 1) + ')</span></td></tr>'; }).join('') + '</tbody></table>' +
+      '<p class="note">Skenario proksi: 5.762 rekening judi dihentikan sementara (Jan-Jun 2026) dibagi ' + idn(m3.merchant_populasi) + ' merchant. Ini proksi kasar, bukan prevalensi aktual, karena satu merchant dapat terkait banyak rekening. FPR maksimum untuk ketepatan 50%: ' + idn(m3.fpr_maks_ppv50_skenario_proxy_persen, 4) + '%. Angka berlaku untuk satu siklus penapisan seluruh merchant.</p><details class="tech-note"><summary>Dasar perhitungan statistik</summary><p>PPV = (Sensitivitas × Prevalensi) / [(Sensitivitas × Prevalensi) + (FPR × (1 − Prevalensi))].</p></details>' + A.src('PPATK, Laporan Semester I 2026, hal. 21; BI 2026; Teorema Bayes; diolah di notebook.') + '</div>' +
+      '<div class="card"><div class="flex between"><div><div class="card-tag">POTENSI DAMPAK TERHADAP UMKM</div><h3>Nilai Transaksi Bruto yang Tertunda</h3></div>' + badge('asumsi') + '</div><p class="hint">Skenario FPR 1% dan prevalensi proksi. Nilai ini adalah transaksi bruto yang berpotensi tertunda, bukan omzet hilang atau kerugian aktual; dana tetap milik merchant dan dapat dicairkan setelah pemeriksaan.</p><table class="mini mt8"><thead><tr><th>Lama</th><th class="r">Transaksi terganggu</th><th class="r">Nilai bruto (Rp miliar)</th></tr></thead><tbody>' + imp.map(function (r) { return '<tr><td>' + r.hari + ' hari</td><td class="r num">' + r['porsi_transaksi_terganggu_%'] + '%</td><td class="r num">' + idn(r.nilai_bruto_tengah_Rp_miliar, 1) + ' <span class="small muted">(' + idn(r.nilai_bruto_min_Rp_miliar, 1) + '-' + idn(r.nilai_bruto_maks_Rp_miliar, 1) + ')</span></td></tr>'; }).join('') + '</tbody></table>' +
       '<a class="btn sec mt12" href="#/simulator/risiko">Buka Simulasi Risiko</a></div>';
   }
-  function bPeta() {
-    var P = R.peta, vals = P.prov.map(function (p) { return p.v; }).sort(function (a, b) { return a - b; }), lo = T.quantile(vals, 0.05), hi = T.quantile(vals, 0.95);
-    function col(v) { var t = Math.max(0, Math.min(1, (v - lo) / (hi - lo))); var s = [[238, 243, 250], [141, 182, 245], [30, 91, 216], [11, 42, 91]], k = Math.min(2, Math.floor(t * 3)), f = t * 3 - k; var c = s[k].map(function (x, i) { return Math.round(x + (s[k + 1][i] - x) * f); }); return 'rgb(' + c.join(',') + ')'; }
-    var paths = P.prov.map(function (p, i) { return '<path data-i="' + i + '" d="' + p.d + '" fill="' + col(p.v) + '" stroke="#fff" stroke-width=".8" style="cursor:pointer"/>'; }).join('');
-    var sorted = P.prov.slice().sort(function (a, b) { return b.v - a.v; });
-    return '<div class="card"><div class="flex between"><div><div class="card-tag">DATA SOSIO-EKONOMI DAERAH BPS</div><h3>PDRB per Kapita ADHB 2024</h3></div>' + badge('resmi') + '</div><p class="hint">Ketuk provinsi untuk melihat nilai.</p><svg class="chart" viewBox="0 0 ' + P.w + ' ' + P.h + '">' + paths + '</svg>' +
-      '<div style="height:8px;border-radius:4px;background:linear-gradient(90deg,#EEF3FA,#8DB6F5,#1E5BD8,#0B2A5B);margin-top:8px"></div><div class="flex between small muted"><span>Rp' + idn(lo / 1000) + ' juta</span><span>Rp' + idn(hi / 1000) + ' juta</span></div>' +
-      '<div id="pinfo" class="note">Ketuk peta. Tertinggi ' + esc(sorted[0].n) + ' (Rp' + idn(sorted[0].v / 1000, 1) + ' juta), terendah ' + esc(sorted[sorted.length - 1].n) + ' (Rp' + idn(sorted[sorted.length - 1].v / 1000, 1) + ' juta), selisih ' + idn(sorted[0].v / sorted[sorted.length - 1].v, 1) + ' kali.</div>' +
-      '<p class="warnnote"><b>Bukan peta risiko judi daring.</b> Peta ini menunjukkan bahwa kemampuan ekonomi daerah tidak merata, sehingga tampilan dan pelatihan petugas TAPIS harus ringan dan dapat dipakai di seluruh daerah.</p>' + A.src('BPS, PDRB per kapita ADHB menurut provinsi 2024; batas 38 provinsi; diolah.') + '</div>';
+
+  function bKlaster() {
+    var clusters = [
+      {
+        id: 1, n: 292, pct: '56,81', color: '#013590', nama: 'Pertanian & Komoditas Primer',
+        sectors: 'Pertanian (32,5%), Perdagangan (11,9%), Pertambangan (11,7%)',
+        desc: 'Klaster terbesar. Perputaran transaksi mengikuti musim panen dan aktivitas komoditas primer.'
+      },
+      {
+        id: 2, n: 17, pct: '3,31', color: '#dc88bf', nama: 'Konstruksi & Pemerintahan',
+        sectors: 'Konstruksi (30,4%), Administrasi Pemerintahan (24,4%), Pertanian (20,4%)',
+        desc: 'Wilayah dengan aktivitas konstruksi dan belanja pemerintahan yang menonjol.'
+      },
+      {
+        id: 3, n: 162, pct: '31,52', color: '#b3cd7f', nama: 'Industri Manufaktur & Pengolahan',
+        sectors: 'Industri Pengolahan (21,6%), Pertanian (17,6%), Perdagangan (16,2%)',
+        desc: 'Sentra manufaktur dan kawasan industri regional, berpadu dengan pertanian dan perdagangan perantara.'
+      },
+      {
+        id: 4, n: 43, pct: '8,37', color: '#e92e2e', nama: 'Perdagangan & Jasa Metropolitan',
+        sectors: 'Perdagangan (21,5%), Industri Pengolahan (17,1%), Konstruksi (11,2%)',
+        desc: 'Pusat kota metropolitan dengan perdagangan eceran, jasa komersial, dan konsumsi perkotaan tinggi.'
+      }
+    ];
+
+    var cards = clusters.map(function (c) {
+      return '<div class="card cluster-card">' +
+        '<div class="flex between">' +
+        '<div class="flex" style="gap:8px;align-items:center"><span class="cluster-dot" style="background:' + c.color + ';width:12px;height:12px;border-radius:50%;display:inline-block"></span><b style="font-size:13.5px">Klaster ' + c.id + '</b></div>' +
+        '<span class="badge b-resmi">' + c.pct + '% Wilayah</span>' +
+        '</div>' +
+        '<div class="cluster-count num mt8" style="font-size:22px;font-weight:800;color:var(--navy-900)">' + c.n +
+        '<small style="font-size:12px;font-weight:600;color:var(--muted)"> kabupaten/kota</small>' +
+        '</div>' +
+        '<div style="font-weight:700;color:var(--blue);font-size:13px;margin-top:2px">' + esc(c.nama) + '</div>' +
+        '<p class="hint mt8" style="font-size:12px;line-height:1.5">' + c.desc + '</p>' +
+        '<div class="cluster-sector" style="font-size:11.5px;background:var(--sky-2);padding:8px 10px;border-radius:8px;margin-top:8px;border:1px solid var(--line)"><b>Sektor dominan:</b> ' + c.sectors + '</div>' +
+        '</div>';
+    }).join('');
+
+    var legend = '<div class="legend cluster-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">' +
+      clusters.map(function (c) {
+        return '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600">' +
+          '<i style="background:' + c.color + ';width:10px;height:10px;border-radius:3px;display:inline-block"></i>' +
+          'Klaster ' + c.id + ' (' + c.pct + '%)' +
+          '</span>';
+      }).join('') +
+      '</div>';
+
+    var evalRows = [
+      { alg: 'Agglomerative Ward', k: 2, sil: '0,4994', dbi: '0,7022', ch: '233,58', rank: '1,25', st: 'Optimal secara statistik' },
+      { alg: 'K-Means++', k: 2, sil: '0,4631', dbi: '0,8598', ch: '244,73', rank: '2,50', st: 'Alternatif K=2' },
+      { alg: 'Agglomerative Ward', k: 4, sil: '0,1643', dbi: '1,5032', ch: '153,05', rank: '4,875', st: 'Dipertahankan (eksploratif)' },
+      { alg: 'K-Means++', k: 4, sil: '0,1836', dbi: '1,4821', ch: '167,88', rank: '3,75', st: 'Alternatif K=4' }
+    ].map(function (r) {
+      var isK4 = r.k === 4 && r.alg.indexOf('Ward') >= 0;
+      var isK2 = r.k === 2 && r.alg.indexOf('Ward') >= 0;
+      var rowStyle = isK4 ? 'background:rgba(240,122,26,.06);font-weight:600' : isK2 ? 'background:rgba(23,166,115,.05)' : '';
+      return '<tr style="' + rowStyle + '"><td><b>' + r.alg + '</b></td><td class="r num">' + r.k + '</td><td class="r num">' + r.sil + '</td><td class="r num">' + r.dbi + '</td><td class="r num">' + r.ch + '</td><td class="r num"><b>' + r.rank + '</b></td><td class="small">' + r.st + '</td></tr>';
+    }).join('');
+
+    return '<div class="card">' +
+      '<div class="flex between"><div><span class="card-tag">SEGMENTASI STRUKTUR EKONOMI</span><h3>Klaster Kabupaten/Kota Indonesia</h3></div><span class="badge b-resmi">514 Wilayah</span></div>' +
+      '<p class="hint">Segmentasi 514 kabupaten/kota berdasarkan komposisi PDRB 17 lapangan usaha BPS (Sem I 2026), ditransformasi dengan Centered Log-Ratio (CLR) dan dikelompokkan dengan Agglomerative Clustering metode Ward.</p>' +
+
+      '<div class="cluster-map-wrap mt8" style="background:#F8FAFC;border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:6px;text-align:center">' +
+      '<img class="cluster-map" src="assets/img/klaster_struktur_ekonomi.png" alt="Gambar 4. Peta persebaran klaster struktur ekonomi kabupaten/kota di Indonesia berdasarkan komposisi PDRB 17 lapangan usaha" style="width:100%;max-width:100%;height:auto;border-radius:10px;display:block" loading="lazy">' +
+      '</div>' +
+
+      legend +
+
+      '<div class="note mt12" style="font-size:12px;line-height:1.55">' +
+      '<b>Perlindungan UMKM.</b> Pola transaksi dipengaruhi jenis usaha dan kondisi ekonomi wilayah. Ambang yang sama untuk semua wilayah berisiko menandai keliru usaha yang wajar, sehingga 514 kabupaten/kota diklasterkan menjadi kelompok wilayah yang relatif serupa.' +
+      '</div>' +
+
+      A.src('BPS, PDRB 17 Lapangan Usaha 514 Kabupaten/Kota Semester I 2026; Agglomerative Clustering metode Ward; diolah dari notebook analisis TAPIS.') +
+      '</div>' +
+
+      '<div class="sec-title"><h2>Profil Sektoral Klaster</h2><span class="small muted">514 kabupaten/kota</span></div>' +
+      '<div class="grid2">' + cards + '</div>' +
+
+      '<div class="card">' +
+      '<div class="card-tag">EVALUASI METODOLOGIS</div>' +
+      '<h3>Diagnostik Model dan Pemilihan K=4</h3>' +
+      '<p class="hint">Pangsa PDRB bersifat komposisional (total 100%), sehingga ditransformasi dengan CLR (nilai nol ditangani secara multiplikatif) sebelum pengelompokan Ward.</p>' +
+
+      '<div class="grid2 mt12">' +
+      '<div class="stat"><div class="lab">Hopkins Statistic (ruang CLR)</div><div class="val num">0,8087</div><span class="small muted">&gt; 0,75: kecenderungan mengelompok kuat</span></div>' +
+      '<div class="stat"><div class="lab">Silhouette Score (K=4)</div><div class="val num">0,1643</div><span class="small muted">pemisahan antarklaster lemah</span></div>' +
+      '<div class="stat"><div class="lab">Davies–Bouldin Index (K=4)</div><div class="val num">1,5032</div><span class="small muted">lebih rendah lebih baik</span></div>' +
+      '<div class="stat"><div class="lab">Calinski–Harabasz (K=4)</div><div class="val num">153,05</div><span class="small muted">lebih tinggi lebih baik</span></div>' +
+      '</div>' +
+
+      '<div class="tblwrap mt12"><table class="mini"><thead><tr><th>Model</th><th class="r">K</th><th class="r">Silhouette</th><th class="r">Davies-Bouldin</th><th class="r">Calinski-H.</th><th class="r">Rank Gabungan</th><th>Status</th></tr></thead><tbody>' +
+      evalRows +
+      '</tbody></table></div>' +
+
+      '<div class="note mt12" style="font-size:12px;line-height:1.55">' +
+      '<b>Mengapa K=4.</b> Ward K=2 unggul secara statistik (rank 1,25 vs 4,875; Silhouette 0,4994 vs 0,1643). K=4 dipertahankan karena lebih rinci dan mudah diinterpretasikan, sehingga diposisikan sebagai <b>segmentasi eksploratif</b>.' +
+      '</div>' +
+
+      '<div class="note mt8" style="font-size:12px;line-height:1.55">' +
+      '<b>Pembanding berlapis di TAPIS.</b> Klaster menjadi lapisan pertama, lalu dipersempit: <b>klaster wilayah &rarr; kategori usaha &rarr; skala merchant</b>. Warung di wilayah pertanian dibandingkan dengan warung sejenis dan sebesar di wilayah serupa.' +
+      '</div>' +
+
+      '<p class="warnnote mt12">' +
+      '<b>Bukan indikator risiko perjudian.</b> Klaster tidak menunjukkan tingkat perjudian wilayah; hanya konteks bersama kategori usaha, skala, lokasi, dan riwayat transaksi. Manfaatnya perlu diuji lewat perbandingan false positive sebelum dan sesudah klaster diterapkan.' +
+      '</p>' +
+      '</div>';
   }
-  function bindPeta() { app.querySelectorAll('path[data-i]').forEach(function (p) { p.onclick = function () { var d = R.peta.prov[+p.dataset.i]; app.querySelectorAll('path[data-i]').forEach(function (q) { q.setAttribute('stroke', '#fff'); q.setAttribute('stroke-width', '.8'); }); p.setAttribute('stroke', '#E0413A'); p.setAttribute('stroke-width', '2.5'); app.querySelector('#pinfo').innerHTML = '<b>' + esc(d.n) + '</b>: PDRB per kapita Rp' + idn(d.v / 1000, 1) + ' juta (ADHB 2024); pertumbuhan riil per kapita 2025 ' + idn(d.g, 2) + '%.'; }; }); }
+
   // ---------- simulator ----------
   var sim = { J: false, P: false, K: false, jdata: true, malam: true, seragam: true, sesaat: false, preset: 'angkringan' };
   var PRESETS = {
